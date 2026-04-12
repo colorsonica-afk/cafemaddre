@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>🦋 Club Maddre</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ── LOADING ────────────────────────────────────────────── -->
+<div id="screen-loading" class="screen active">
+  <div class="loading-center">
+    <div class="butterfly">🦋</div>
+    <p class="tagline">cargando tu club…</p>
+  </div>
+</div>
+
+<!-- ── LOGIN ──────────────────────────────────────────────── -->
+<div id="screen-login" class="screen">
+  <div class="login-wrap">
+    <div class="brand-block">
+      <span class="brand-emoji">🦋</span>
+      <h1 class="brand-name">maddre</h1>
+      <p class="brand-tag">cocina saludable que cuida de ti</p>
+    </div>
+    <div class="card">
+      <h2>Inicia sesión</h2>
+      <div class="field">
+        <label>Cédula</label>
+        <input id="login-cedula" type="number" placeholder="Tu número de cédula" inputmode="numeric">
+      </div>
+      <div class="field">
+        <label>Contraseña <span class="hint">(tu número de celular)</span></label>
+        <input id="login-pass" type="password" inputmode="numeric" placeholder="Tu celular">
+      </div>
+      <div id="login-error" class="error-msg hidden"></div>
+      <button class="btn-primary" onclick="doLogin()">Entrar</button>
+      <button class="btn-ghost" onclick="showScreen('register')">¿Primera vez? Regístrate</button>
+      <button class="btn-link" onclick="showAdminLogin()">Soy del equipo →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── REGISTER ───────────────────────────────────────────── -->
+<div id="screen-register" class="screen">
+  <div class="topbar">
+    <button class="back-btn" onclick="showScreen('login')">← Volver</button>
+    <h2>Únete al club</h2>
+  </div>
+  <div class="scroll-wrap">
+    <div class="card">
+      <div class="field">
+        <label>Cédula *</label>
+        <input id="reg-cedula" type="number" inputmode="numeric" placeholder="Número de cédula">
+      </div>
+      <div class="field">
+        <label>Nombre completo *</label>
+        <input id="reg-nombre" type="text" placeholder="Ana García">
+      </div>
+      <div class="field">
+        <label>Celular * <span class="hint">(será tu contraseña)</span></label>
+        <input id="reg-tel" type="tel" inputmode="numeric" placeholder="300 123 4567">
+      </div>
+      <div class="field">
+        <label>Correo</label>
+        <input id="reg-correo" type="email" placeholder="ana@gmail.com">
+      </div>
+      <div class="field">
+        <label>Fecha de nacimiento</label>
+        <input id="reg-fnac" type="date">
+      </div>
+      <div class="field">
+        <label>Código de referido <span class="hint">(opcional)</span></label>
+        <input id="reg-ref" type="number" inputmode="numeric" placeholder="Cédula de quien te invitó">
+      </div>
+      <div id="reg-error" class="error-msg hidden"></div>
+      <button class="btn-primary" onclick="doRegister()">Crear cuenta</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── CLIENTE PROFILE ────────────────────────────────────── -->
+<div id="screen-profile" class="screen">
+  <div class="profile-header">
+    <div class="profile-top">
+      <button class="icon-btn" onclick="logout()">↩</button>
+      <span id="prof-nivel-badge" class="nivel-badge">🌿 Vecino</span>
+      <button class="icon-btn" onclick="loadProfile()">↻</button>
+    </div>
+    <h2 id="prof-nombre">Hola!</h2>
+    <p id="prof-cedula" class="prof-sub"></p>
+  </div>
+
+  <!-- Flash banner -->
+  <div id="flash-banner" class="flash-banner hidden">
+    <span class="flash-icon">⚡</span>
+    <div>
+      <p id="flash-text" class="flash-text"></p>
+      <p id="flash-timer" class="flash-timer"></p>
+    </div>
+  </div>
+
+  <!-- Puntos card -->
+  <div class="card points-card">
+    <div class="points-row">
+      <div>
+        <p class="points-label">Puntos</p>
+        <p id="prof-puntos" class="points-big">0</p>
+      </div>
+      <div class="points-progress-wrap">
+        <div id="points-dots" class="points-dots"></div>
+        <p class="points-sub">para tu rollito gratis 🥐</p>
+      </div>
+    </div>
+    <button id="btn-redeem-pts" class="btn-primary" onclick="redeemPoints()" disabled>
+      Canjear rollito (10 pts)
+    </button>
+  </div>
+
+  <!-- QR card -->
+  <div class="card qr-card">
+    <p class="qr-label">Tu código en caja</p>
+    <div id="qr-container"></div>
+    <p id="prof-cedula-qr" class="qr-num"></p>
+  </div>
+
+  <!-- Promos -->
+  <div class="card promos-card">
+    <h3>Tus promos</h3>
+    <div id="promo-caja" class="promo-item">
+      <div>
+        <p class="promo-name">📦 Caja semanal</p>
+        <p class="promo-desc">4 rollitos por $20.000</p>
+      </div>
+      <button id="btn-caja" class="promo-btn" onclick="redeemCaja()">Canjear</button>
+    </div>
+    <div id="promo-cumple" class="promo-item">
+      <div>
+        <p class="promo-name">🎂 Rollito cumpleañero</p>
+        <p id="cumple-desc" class="promo-desc">Durante tu mes de cumpleaños</p>
+      </div>
+      <button id="btn-cumple" class="promo-btn" onclick="redeemCumple()">Canjear</button>
+    </div>
+  </div>
+
+  <!-- Stats footer -->
+  <div class="stats-row">
+    <div class="stat-box">
+      <p id="stat-total" class="stat-num">0</p>
+      <p class="stat-label">productos</p>
+    </div>
+    <div class="stat-box">
+      <p id="stat-rollitos" class="stat-num">0</p>
+      <p class="stat-label">rollitos ganados</p>
+    </div>
+    <div class="stat-box">
+      <p class="stat-num">☕</p>
+      <p id="stat-nivel" class="stat-label">Vecino</p>
+    </div>
+  </div>
+
+  <p class="ref-code">Tu código de referido: <strong id="ref-code-val"></strong></p>
+  <div style="height:2rem"></div>
+</div>
+
+<!-- ── ADMIN LOGIN ─────────────────────────────────────────── -->
+<div id="screen-admin-login" class="screen">
+  <div class="topbar">
+    <button class="back-btn" onclick="showScreen('login')">← Volver</button>
+    <h2>Equipo Maddre</h2>
+  </div>
+  <div class="card" style="margin:1.5rem 1rem">
+    <div class="field">
+      <label>Contraseña de admin</label>
+      <input id="admin-pass-input" type="password" placeholder="••••••••">
+    </div>
+    <div id="admin-login-error" class="error-msg hidden"></div>
+    <button class="btn-primary" onclick="adminAuthAndGo('admin')">Panel Admin</button>
+    <button class="btn-ghost" onclick="adminAuthAndGo('pos')">Ir a POS / Caja</button>
+  </div>
+</div>
+
+<!-- ── ADMIN PANEL ─────────────────────────────────────────── -->
+<div id="screen-admin" class="screen">
+  <div class="topbar">
+    <button class="back-btn" onclick="showScreen('admin-login')">← Salir</button>
+    <h2>Panel Admin</h2>
+  </div>
+  <div class="scroll-wrap">
+
+    <!-- Day summary -->
+    <div id="admin-summary" class="card summary-card">
+      <h3>Resumen de hoy</h3>
+      <div class="summary-grid">
+        <div><p id="sum-ventas" class="sum-num">-</p><p>ventas</p></div>
+        <div><p id="sum-nuevos" class="sum-num">-</p><p>nuevos</p></div>
+        <div><p id="sum-puntos" class="sum-num">-</p><p>puntos</p></div>
+      </div>
+    </div>
+
+    <!-- Search client -->
+    <div class="card">
+      <h3>Buscar cliente</h3>
+      <div class="field">
+        <input id="admin-search" type="text" placeholder="Cédula, celular o nombre…">
+      </div>
+      <button class="btn-primary" onclick="adminSearch()">Buscar</button>
+      <div id="admin-search-results" class="search-results"></div>
+    </div>
+
+    <!-- Client detail (hidden until search) -->
+    <div id="admin-client-detail" class="card hidden">
+      <h3 id="adm-client-name">—</h3>
+      <p id="adm-client-info" class="prof-sub"></p>
+      <p id="adm-client-pts" class="points-big" style="font-size:2rem"></p>
+
+      <div class="field">
+        <label>Ajuste de puntos <span class="hint">(usa − para descontar)</span></label>
+        <input id="adm-pts-delta" type="number" placeholder="ej: 3 o -2">
+      </div>
+      <div class="field">
+        <label>Nota (opcional)</label>
+        <input id="adm-pts-nota" type="text" placeholder="Motivo del ajuste">
+      </div>
+      <button class="btn-primary" onclick="adminAdjPoints()">Guardar ajuste</button>
+
+      <button id="btn-verify-resena" class="btn-ghost" onclick="adminVerifyResena()">
+        ✅ Verificar reseña Google Maps
+      </button>
+    </div>
+
+    <!-- Create flash -->
+    <div class="card">
+      <h3>⚡ Crear regalo flash</h3>
+      <div class="field">
+        <label>Mensaje</label>
+        <input id="flash-texto" type="text" placeholder="Ej: Hoy hasta las 6pm: aromática gratis">
+      </div>
+      <div class="field">
+        <label>Nivel mínimo</label>
+        <select id="flash-nivel">
+          <option value="Vecino">🌿 Vecino (todos)</option>
+          <option value="Habitual">☕ Habitual</option>
+          <option value="De la casa">🥐 De la casa</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Duración (horas)</label>
+        <input id="flash-horas" type="number" value="4" min="1" max="72">
+      </div>
+      <button class="btn-primary" onclick="createFlash()">⚡ Activar flash</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── POS ─────────────────────────────────────────────────── -->
+<div id="screen-pos" class="screen">
+  <div class="topbar">
+    <button class="back-btn" onclick="showScreen('admin-login')">← Salir</button>
+    <h2>Punto de venta</h2>
+  </div>
+  <div class="scroll-wrap">
+
+    <!-- Scan / manual -->
+    <div class="card">
+      <button class="btn-primary scan-btn" onclick="startScan()">📷 Escanear QR del cliente</button>
+      <p class="divider-text">— o buscar por cédula —</p>
+      <div class="field">
+        <input id="pos-cedula-manual" type="number" inputmode="numeric" placeholder="Número de cédula">
+      </div>
+      <button class="btn-ghost" onclick="posLoadManual()">Cargar cliente</button>
+    </div>
+
+    <!-- Camera for QR -->
+    <div id="pos-camera-wrap" class="card hidden">
+      <video id="pos-video" autoplay playsinline style="width:100%;border-radius:8px"></video>
+      <canvas id="pos-canvas" style="display:none"></canvas>
+      <button class="btn-ghost" onclick="stopScan()">✕ Cancelar</button>
+    </div>
+
+    <!-- Client loaded -->
+    <div id="pos-client-card" class="card hidden">
+      <div class="pos-client-top">
+        <div>
+          <p id="pos-client-name" class="pos-name"></p>
+          <p id="pos-client-nivel" class="nivel-badge" style="display:inline-block"></p>
+        </div>
+        <div style="text-align:right">
+          <p class="points-label">Puntos</p>
+          <p id="pos-client-pts" class="points-big" style="font-size:2rem"></p>
+        </div>
+      </div>
+      <!-- Promos available for redemption -->
+      <div id="pos-promos" class="pos-promos"></div>
+    </div>
+
+    <!-- Product selector -->
+    <div id="pos-products-section" class="card hidden">
+      <h3>Productos</h3>
+      <div id="pos-product-list" class="product-list"></div>
+      <div class="pos-total-row">
+        <span>Total puntos:</span>
+        <strong id="pos-total-pts">0</strong>
+      </div>
+      <button class="btn-primary" onclick="confirmSale()">✔ Confirmar venta</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── TOAST ───────────────────────────────────────────────── -->
+<div id="toast" class="toast hidden"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
