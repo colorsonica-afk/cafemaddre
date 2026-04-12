@@ -20,10 +20,10 @@ let state = {
 
 // ── API ───────────────────────────────────────────────────────
 async function api(action, params = {}) {
-  const body = JSON.stringify({ action, ...params });
-  const res = await fetch(SCRIPT_URL, {
-    method: "POST",
-    body,
+  const qs = new URLSearchParams({ action, ...params }).toString();
+  const res = await fetch(SCRIPT_URL + "?" + qs, {
+    method: "GET",
+    redirect: "follow",
   });
   return res.json();
 }
