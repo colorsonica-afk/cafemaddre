@@ -500,26 +500,38 @@ html, body {
   line-height: 1.5;
 }
 
-/* Banner completar perfil */
-.completar-banner {
+/* Barra progreso perfil */
+.completar-card {
+  background: var(--white);
+  border: 1.5px solid var(--dorado);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin: 1rem;
+  box-shadow: var(--shadow);
+}
+.completar-top {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  background: var(--dorado);
-  color: var(--white);
-  padding: .85rem 1.25rem;
-  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: .85rem;
 }
-.completar-title { font-weight: 500; font-size: .9rem; }
-.completar-sub   { font-size: .75rem; opacity: .85; margin-top: .15rem; }
-.completar-btn {
-  background: rgba(255,255,255,.25);
-  border: 1.5px solid rgba(255,255,255,.5);
-  color: var(--white);
-  padding: .4rem .9rem;
-  border-radius: var(--radius-sm);
-  font-family: 'DM Sans', sans-serif;
-  font-size: .85rem;
-  cursor: pointer;
-  white-space: nowrap;
+.completar-title { font-weight: 500; font-size: .95rem; color: var(--text); }
+.completar-sub   { font-size: .8rem; color: var(--text-lt); margin-top: .2rem; }
+.completar-pct {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem;
+  color: var(--dorado);
+  font-weight: 700;
+}
+.completar-bar-bg {
+  height: .5rem;
+  background: var(--crema2);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.completar-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--dorado), var(--verde));
+  border-radius: 99px;
+  transition: width .5s ease;
 }

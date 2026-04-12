@@ -108,13 +108,19 @@
 <!-- ── PERFIL CLIENTE ─────────────────────────────────────── -->
 <div id="screen-profile" class="screen">
 
-  <!-- Banner perfil incompleto -->
-  <div id="perfil-incompleto-banner" class="completar-banner hidden">
-    <div>
-      <p class="completar-title">📝 Completa tu perfil</p>
-      <p class="completar-sub">Gana +1 punto y desbloquea todas las promos</p>
+  <!-- Barra progreso perfil -->
+  <div id="perfil-incompleto-banner" class="completar-card hidden">
+    <div class="completar-top">
+      <div>
+        <p class="completar-title">Completa tu registro</p>
+        <p class="completar-sub">Gana <strong>+1 punto</strong> al terminar 🎁</p>
+      </div>
+      <span id="completar-pct" class="completar-pct">25%</span>
     </div>
-    <button id="btn-completar-perfil" class="completar-btn">Completar</button>
+    <div class="completar-bar-bg">
+      <div id="completar-bar-fill" class="completar-bar-fill" style="width:25%"></div>
+    </div>
+    <button id="btn-completar-perfil" class="btn-primary" style="margin-top:.75rem">Continuar registro →</button>
   </div>
 
   <div class="profile-header">

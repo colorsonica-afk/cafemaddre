@@ -3,7 +3,7 @@
 //  Registro progresivo: correo → cédula → nombre/WA → cumple
 // ============================================================
 
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbylSrBu84KEaLl19Jny5YSt2iTgRdUfdVEfpseT_KMdjkGvA2Z-5y5pC-XqSto-Lz99GQ/exec";
+const SCRIPT_URL = "PEGA_AQUI_TU_URL_DE_APPS_SCRIPT";
 
 // ── State ─────────────────────────────────────────────────────
 let state = {
@@ -226,6 +226,9 @@ function renderProfile(res) {
   const bannerEl = document.getElementById("perfil-incompleto-banner");
   if (nivelReg < 4) {
     bannerEl.classList.remove("hidden");
+    const pct = Math.round((nivelReg / 4) * 100);
+    document.getElementById("completar-pct").textContent = pct + "%";
+    document.getElementById("completar-bar-fill").style.width = pct + "%";
     document.getElementById("btn-completar-perfil").onclick = () => mostrarPaso(nivelReg);
   } else {
     bannerEl.classList.add("hidden");
