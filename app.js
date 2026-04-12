@@ -3,7 +3,7 @@
 //  Registro progresivo: correo → cédula → nombre/WA → cumple
 // ============================================================
 
-https://script.google.com/macros/s/AKfycbylSrBu84KEaLl19Jny5YSt2iTgRdUfdVEfpseT_KMdjkGvA2Z-5y5pC-XqSto-Lz99GQ/exec
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbylSrBu84KEaLl19Jny5YSt2iTgRdUfdVEfpseT_KMdjkGvA2Z-5y5pC-XqSto-Lz99GQ/exec";
 
 // ── State ─────────────────────────────────────────────────────
 let state = {
