@@ -1,18 +1,17 @@
 // ============================================================
-//  🦋 CAFÉ MADDRE — APP JS
-//  IMPORTANTE: Cambia SCRIPT_URL por la URL de tu Apps Script
-//  después de desplegarlo como Web App.
+//  🦋 CAFÉ MADDRE — APP JS v2
+//  Registro progresivo: correo → cédula → nombre/WA → cumple
 // ============================================================
 
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbylSrBu84KEaLl19Jny5YSt2iTgRdUfdVEfpseT_KMdjkGvA2Z-5y5pC-XqSto-Lz99GQ/exec";
+const SCRIPT_URL = "PEGA_AQUI_TU_URL_DE_APPS_SCRIPT";
 
-// ── State ────────────────────────────────────────────────────
+// ── State ─────────────────────────────────────────────────────
 let state = {
-  cedula: null,
+  correo: null,
   profile: null,
   adminPass: null,
   products: [],
-  cart: {},           // { productId: quantity }
+  cart: {},
   scanStream: null,
   posClient: null,
   flashTimerInterval: null,
@@ -20,22 +19,19 @@ let state = {
 
 // ── API ───────────────────────────────────────────────────────
 async function api(action, params = {}) {
-  const qs = new URLSearchParams({ action, ...params }).toString();
-  const res = await fetch(SCRIPT_URL + "?" + qs, {
-    method: "GET",
-    redirect: "follow",
-  });
+  const qs  = new URLSearchParams({ action, ...params }).toString();
+  const res = await fetch(SCRIPT_URL + "?" + qs, { method: "GET", redirect: "follow" });
   return res.json();
 }
 
-// ── Screen router ─────────────────────────────────────────────
+// ── Screens ───────────────────────────────────────────────────
 function showScreen(name) {
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
   document.getElementById("screen-" + name).classList.add("active");
 }
 
 // ── Toast ─────────────────────────────────────────────────────
-function toast(msg, duration = 3000) {
+function toast(msg, duration = 3500) {
   const t = document.getElementById("toast");
   t.textContent = msg;
   t.classList.remove("hidden");
@@ -43,66 +39,124 @@ function toast(msg, duration = 3000) {
   t._timer = setTimeout(() => t.classList.add("hidden"), duration);
 }
 
+function showErr(el, msg) { el.textContent = msg; el.classList.remove("hidden"); }
+function hideErr(el) { el.classList.add("hidden"); }
+
 // ── Loading ───────────────────────────────────────────────────
-window.addEventListener("load", () => {
-  // Show login after brief splash
-  setTimeout(() => showScreen("login"), 800);
-});
+window.addEventListener("load", () => setTimeout(() => showScreen("login"), 800));
 
-// ── LOGIN ─────────────────────────────────────────────────────
-async function doLogin() {
-  const cedula = document.getElementById("login-cedula").value.trim();
-  const password = document.getElementById("login-pass").value.trim();
-  const errEl = document.getElementById("login-error");
-  errEl.classList.add("hidden");
+let loadingEl;
+function showLoading() {
+  if (!loadingEl) {
+    loadingEl = document.createElement("div");
+    loadingEl.style.cssText = "position:fixed;inset:0;background:rgba(250,246,239,.75);display:flex;align-items:center;justify-content:center;z-index:9999;font-size:2.5rem;";
+    loadingEl.textContent = "🦋";
+    document.body.appendChild(loadingEl);
+  }
+  loadingEl.style.display = "flex";
+}
+function hideLoading() { if (loadingEl) loadingEl.style.display = "none"; }
 
-  if (!cedula || !password) { showErr(errEl, "Completa los campos"); return; }
+// ════════════════════════════════════════════════════════════
+//  FLUJO CLIENTE
+// ════════════════════════════════════════════════════════════
+
+// ── PASO 0: ingresar correo ───────────────────────────────────
+async function doIniciar() {
+  const correo = document.getElementById("login-correo").value.trim().toLowerCase();
+  const errEl  = document.getElementById("login-error");
+  hideErr(errEl);
+  if (!correo || !correo.includes("@")) { showErr(errEl, "Ingresa un correo válido"); return; }
 
   showLoading();
-  const res = await api("login", { cedula, password });
+  const res = await api("iniciar", { correo });
   hideLoading();
 
   if (!res.ok) { showErr(errEl, res.error); return; }
 
-  state.cedula = cedula;
-  state.profile = res;
-  renderProfile(res);
-  showScreen("profile");
+  state.correo = correo;
+
+  // Redirigir según paso
+  if (res.paso >= 4) {
+    // Perfil completo — cargar y mostrar
+    await loadAndShowProfile();
+  } else {
+    mostrarPaso(res.paso);
+  }
 }
 
-// ── REGISTER ──────────────────────────────────────────────────
-async function doRegister() {
-  const cedula         = document.getElementById("reg-cedula").value.trim();
-  const nombre         = document.getElementById("reg-nombre").value.trim();
-  const telefono       = document.getElementById("reg-tel").value.trim();
-  const correo         = document.getElementById("reg-correo").value.trim();
-  const fecha_nacimiento = document.getElementById("reg-fnac").value;
-  const referido_por   = document.getElementById("reg-ref").value.trim();
-  const errEl          = document.getElementById("reg-error");
-  errEl.classList.add("hidden");
+// ── PASOS 1-3: completar datos ────────────────────────────────
+function mostrarPaso(paso) {
+  // Ocultar todos los pasos
+  [1, 2, 3].forEach(n => {
+    document.getElementById("paso-" + n).classList.add("hidden");
+  });
+  document.getElementById("paso-" + paso)?.classList.remove("hidden");
+  showScreen("onboarding");
+  actualizarBarraPasos(paso);
+}
 
-  if (!cedula || !nombre || !telefono) { showErr(errEl, "Completa los campos obligatorios (*)"); return; }
+function actualizarBarraPasos(paso) {
+  document.querySelectorAll(".paso-dot").forEach((d, i) => {
+    d.classList.toggle("activo", i < paso);
+  });
+}
+
+async function completarPaso(paso) {
+  const errEl = document.getElementById("onboarding-error");
+  hideErr(errEl);
+
+  let params = { correo: state.correo, paso };
+
+  if (paso === 1) {
+    const cedula = document.getElementById("ob-cedula").value.trim();
+    if (!cedula) { showErr(errEl, "Ingresa tu cédula"); return; }
+    params.cedula = cedula;
+  }
+  if (paso === 2) {
+    const nombre   = document.getElementById("ob-nombre").value.trim();
+    const telefono = document.getElementById("ob-telefono").value.trim();
+    if (!nombre || !telefono) { showErr(errEl, "Completa nombre y WhatsApp"); return; }
+    params.nombre   = nombre;
+    params.telefono = telefono;
+  }
+  if (paso === 3) {
+    const fnac = document.getElementById("ob-fnac").value;
+    if (!fnac) { showErr(errEl, "Ingresa tu fecha de nacimiento"); return; }
+    params.fecha_nacimiento = fnac;
+  }
 
   showLoading();
-  const res = await api("register", { cedula, nombre, telefono, correo, fecha_nacimiento, referido_por });
+  const res = await api("completarPaso", params);
   hideLoading();
 
   if (!res.ok) { showErr(errEl, res.error); return; }
 
-  state.cedula = cedula;
-  state.profile = res;
-  renderProfile(res);
-  showScreen("profile");
-  toast("🎉 Bienvenido al Club Maddre!");
+  if (res.paso >= 4) {
+    if (res.puntosBono) toast("🎁 ¡+1 punto por completar tu perfil!");
+    await loadAndShowProfile();
+  } else {
+    mostrarPaso(res.paso);
+  }
 }
 
 // ── PROFILE ───────────────────────────────────────────────────
-async function loadProfile() {
-  if (!state.cedula) return;
+async function loadAndShowProfile() {
   showLoading();
-  const res = await api("getProfile", { cedula: state.cedula });
+  const res = await api("login", { correo: state.correo });
   hideLoading();
-  if (!res.ok) { toast("Error al cargar perfil"); return; }
+  if (!res.ok) { toast("Error: " + res.error); return; }
+  state.profile = res;
+  renderProfile(res);
+  showScreen("profile");
+}
+
+async function loadProfile() {
+  if (!state.correo) return;
+  showLoading();
+  const res = await api("getProfile", { correo: state.correo });
+  hideLoading();
+  if (!res.ok) { toast("Error al recargar"); return; }
   state.profile = res;
   renderProfile(res);
 }
@@ -110,23 +164,21 @@ async function loadProfile() {
 function renderProfile(res) {
   const { cliente, puntos, promos, flash } = res;
 
-  document.getElementById("prof-nombre").textContent = "Hola, " + cliente.nombre.split(" ")[0];
-  document.getElementById("prof-cedula").textContent = "CC " + cliente.cedula;
-  document.getElementById("prof-cedula-qr").textContent = cliente.cedula;
-  document.getElementById("ref-code-val").textContent = cliente.cedula;
+  const nombreDisplay = cliente.nombre ? cliente.nombre.split(" ")[0] : cliente.correo.split("@")[0];
+  document.getElementById("prof-nombre").textContent = "Hola, " + nombreDisplay;
+  document.getElementById("prof-correo").textContent = cliente.correo;
 
-  // Nivel
   const nivelEmoji = { "Vecino": "🌿", "Habitual": "☕", "De la casa": "🥐" };
   const badge = document.getElementById("prof-nivel-badge");
   badge.textContent = (nivelEmoji[cliente.nivel] || "") + " " + cliente.nivel;
 
-  // Points
-  document.getElementById("prof-puntos").textContent = puntos.acumulados;
-  document.getElementById("stat-total").textContent   = puntos.totalProductos;
+  // Puntos
+  document.getElementById("prof-puntos").textContent  = puntos.acumulados;
+  document.getElementById("stat-total").textContent    = puntos.totalProductos;
   document.getElementById("stat-rollitos").textContent = puntos.rollitosCanjeados;
-  document.getElementById("stat-nivel").textContent   = cliente.nivel;
+  document.getElementById("stat-nivel").textContent    = cliente.nivel;
 
-  // Dots progress bar
+  // Dots
   const dotsEl = document.getElementById("points-dots");
   dotsEl.innerHTML = "";
   for (let i = 0; i < 10; i++) {
@@ -136,33 +188,40 @@ function renderProfile(res) {
   }
   document.getElementById("btn-redeem-pts").disabled = puntos.acumulados < 10;
 
-  // QR
+  // QR — usa correo como identificador
   const qrEl = document.getElementById("qr-container");
   qrEl.innerHTML = "";
   new QRCode(qrEl, {
-    text: String(cliente.cedula),
-    width: 180,
-    height: 180,
-    colorDark: "#5C3D2E",
-    colorLight: "#FAF6EF",
+    text: cliente.correo,
+    width: 180, height: 180,
+    colorDark: "#5C3D2E", colorLight: "#FAF6EF",
     correctLevel: QRCode.CorrectLevel.M,
   });
+  document.getElementById("prof-correo-qr").textContent = cliente.correo;
 
   // Promos
   renderPromos(promos, cliente);
 
   // Flash
   renderFlash(flash);
+
+  // Completar perfil si faltan datos
+  const nivelReg = Number(cliente.nivel_registro) || 1;
+  const bannerEl = document.getElementById("perfil-incompleto-banner");
+  if (nivelReg < 4) {
+    bannerEl.classList.remove("hidden");
+    document.getElementById("btn-completar-perfil").onclick = () => mostrarPaso(nivelReg);
+  } else {
+    bannerEl.classList.add("hidden");
+  }
 }
 
 function renderPromos(promos, cliente) {
-  // Caja semanal
   const btnCaja = document.getElementById("btn-caja");
   btnCaja.disabled = !promos.cajaSemanalDisponible;
-  btnCaja.textContent = promos.cajaSemanalDisponible ? "Canjear" : "Ya canjeada";
+  btnCaja.textContent = promos.cajaSemanalDisponible ? "Canjear" : "Ya canjeada ✓";
 
-  // Cumpleaños
-  const btnCumple = document.getElementById("btn-cumple");
+  const btnCumple  = document.getElementById("btn-cumple");
   const cumpleDesc = document.getElementById("cumple-desc");
   if (promos.cumpleDisponible) {
     btnCumple.disabled = false;
@@ -170,10 +229,9 @@ function renderPromos(promos, cliente) {
   } else if (promos.esMesCumple && !cliente.resena_maps) {
     btnCumple.disabled = true;
     cumpleDesc.textContent = "Necesitas reseña en Maps verificada";
-  } else if (!promos.esMesCumple && promos.mesesParaCumple !== null) {
+  } else if (!promos.esMesCumple && promos.mesesParaCumple !== null && promos.mesesParaCumple > 0) {
     btnCumple.disabled = true;
-    cumpleDesc.textContent = promos.mesesParaCumple === 0 ? "¡Es este mes!" :
-      `Tu mes llega en ${promos.mesesParaCumple} mese(s)`;
+    cumpleDesc.textContent = `Tu mes llega en ${promos.mesesParaCumple} mes(es)`;
   } else {
     btnCumple.disabled = true;
     cumpleDesc.textContent = "Durante tu mes de cumpleaños";
@@ -182,32 +240,26 @@ function renderPromos(promos, cliente) {
 
 function renderFlash(flashArr) {
   const banner = document.getElementById("flash-banner");
-  if (!flashArr || flashArr.length === 0) {
-    banner.classList.add("hidden");
-    return;
-  }
+  if (!flashArr || flashArr.length === 0) { banner.classList.add("hidden"); return; }
   const f = flashArr[0];
   banner.classList.remove("hidden");
   document.getElementById("flash-text").textContent = f.texto;
-
   if (state.flashTimerInterval) clearInterval(state.flashTimerInterval);
   const timerEl = document.getElementById("flash-timer");
   function tick() {
     const ms = new Date(f.expira) - new Date();
     if (ms <= 0) { timerEl.textContent = "Expirado"; clearInterval(state.flashTimerInterval); return; }
-    const h = Math.floor(ms / 3600000);
-    const m = Math.floor((ms % 3600000) / 60000);
-    const s = Math.floor((ms % 60000) / 1000);
+    const h = Math.floor(ms / 3600000), m = Math.floor((ms % 3600000) / 60000), s = Math.floor((ms % 60000) / 1000);
     timerEl.textContent = `Expira en ${h}h ${m}m ${s}s`;
   }
   tick();
   state.flashTimerInterval = setInterval(tick, 1000);
 }
 
-// ── PROMOS CLIENTE ────────────────────────────────────────────
+// ── REDENCIONES CLIENTE ───────────────────────────────────────
 async function redeemPoints() {
   showLoading();
-  const res = await api("redeemPoints", { cedula: state.cedula });
+  const res = await api("redeemPoints", { correo: state.correo });
   hideLoading();
   if (!res.ok) { toast("❌ " + res.error); return; }
   toast("🎉 ¡Rollito canjeado! Muestra esta pantalla en caja.");
@@ -216,7 +268,7 @@ async function redeemPoints() {
 
 async function redeemCaja() {
   showLoading();
-  const res = await api("redeemCaja", { cedula: state.cedula });
+  const res = await api("redeemCaja", { correo: state.correo });
   hideLoading();
   if (!res.ok) { toast("❌ " + res.error); return; }
   toast("📦 ¡Caja semanal canjeada! 4 rollitos por $20.000");
@@ -225,31 +277,38 @@ async function redeemCaja() {
 
 async function redeemCumple() {
   showLoading();
-  const res = await api("redeemCumple", { cedula: state.cedula });
+  const res = await api("redeemCumple", { correo: state.correo });
   hideLoading();
   if (!res.ok) { toast("❌ " + res.error); return; }
   toast("🎂 ¡Rollito cumpleañero canjeado! Feliz cumpleaños 🎉");
   loadProfile();
 }
 
-// ── ADMIN ─────────────────────────────────────────────────────
+function logout() {
+  state.correo = null;
+  state.profile = null;
+  if (state.flashTimerInterval) clearInterval(state.flashTimerInterval);
+  showScreen("login");
+}
+
+// ════════════════════════════════════════════════════════════
+//  ADMIN
+// ════════════════════════════════════════════════════════════
+
 function showAdminLogin() { showScreen("admin-login"); }
 
 async function adminAuthAndGo(destination) {
-  const pass = document.getElementById("admin-pass-input").value;
+  const pass  = document.getElementById("admin-pass-input").value;
   const errEl = document.getElementById("admin-login-error");
-  errEl.classList.add("hidden");
+  hideErr(errEl);
   if (!pass) { showErr(errEl, "Ingresa la contraseña"); return; }
 
-  // Quick check — real auth happens server-side on each request
   showLoading();
   const res = await api("getDaySummary", { adminPassword: pass });
   hideLoading();
-
   if (!res.ok) { showErr(errEl, "Contraseña incorrecta"); return; }
 
   state.adminPass = pass;
-
   if (destination === "admin") {
     renderDaySummary(res);
     showScreen("admin");
@@ -260,7 +319,7 @@ async function adminAuthAndGo(destination) {
 }
 
 function renderDaySummary(res) {
-  document.getElementById("sum-ventas").textContent = res.ventasHoy ?? "-";
+  document.getElementById("sum-ventas").textContent = res.ventasHoy      ?? "-";
   document.getElementById("sum-nuevos").textContent = res.clientesNuevos ?? "-";
   document.getElementById("sum-puntos").textContent = res.puntosEntregados ?? "-";
 }
@@ -272,67 +331,57 @@ async function adminSearch() {
   const res = await api("searchClient", { q, adminPassword: state.adminPass });
   hideLoading();
   if (!res.ok) { toast("❌ " + res.error); return; }
-
   const container = document.getElementById("admin-search-results");
   container.innerHTML = "";
-  if (res.clientes.length === 0) {
-    container.innerHTML = "<p style='color:var(--text-lt);font-size:.85rem'>Sin resultados</p>";
-    return;
-  }
+  if (!res.clientes.length) { container.innerHTML = "<p style='color:var(--text-lt);font-size:.85rem'>Sin resultados</p>"; return; }
   res.clientes.forEach(c => {
     const div = document.createElement("div");
     div.className = "search-result-item";
-    div.innerHTML = `<p class='result-name'>${c.nombre}</p>
-      <p class='result-sub'>CC ${c.cedula} · ${c.nivel} · ${c.correo || "sin correo"}</p>`;
-    div.onclick = () => loadAdminClientDetail(c.cedula);
+    div.innerHTML = `<p class='result-name'>${c.nombre || "(sin nombre)"}</p>
+      <p class='result-sub'>${c.correo} · ${c.nivel} · Reseña: ${c.resena_maps ? "✅" : "❌"}</p>`;
+    div.onclick = () => loadAdminClientDetail(c.correo);
     container.appendChild(div);
   });
 }
 
-async function loadAdminClientDetail(cedula) {
+async function loadAdminClientDetail(correo) {
   showLoading();
-  const res = await api("getProfile", { cedula });
+  const res = await api("getProfile", { correo });
   hideLoading();
   if (!res.ok) { toast("Error"); return; }
   const { cliente, puntos } = res;
-
   document.getElementById("admin-client-detail").classList.remove("hidden");
-  document.getElementById("adm-client-name").textContent = cliente.nombre;
+  document.getElementById("adm-client-name").textContent = cliente.nombre || correo;
   document.getElementById("adm-client-info").textContent =
-    `CC ${cliente.cedula} · ${cliente.nivel} · Reseña: ${cliente.resena_maps ? "✅" : "❌"}`;
+    `${cliente.correo} · ${cliente.nivel} · Reseña: ${cliente.resena_maps ? "✅" : "❌"}`;
   document.getElementById("adm-client-pts").textContent = puntos.acumulados + " pts";
-
-  // Store for actions
-  document.getElementById("admin-client-detail").dataset.cedula = cedula;
+  document.getElementById("admin-client-detail").dataset.correo = correo;
   document.getElementById("btn-verify-resena").disabled = cliente.resena_maps === true;
   document.getElementById("btn-verify-resena").textContent =
     cliente.resena_maps ? "✅ Reseña ya verificada" : "✅ Verificar reseña Google Maps";
-
   document.getElementById("admin-client-detail").scrollIntoView({ behavior: "smooth" });
 }
 
 async function adminAdjPoints() {
-  const cedula = document.getElementById("admin-client-detail").dataset.cedula;
-  const delta = Number(document.getElementById("adm-pts-delta").value);
-  const nota  = document.getElementById("adm-pts-nota").value;
+  const correo = document.getElementById("admin-client-detail").dataset.correo;
+  const delta  = Number(document.getElementById("adm-pts-delta").value);
   if (!delta) { toast("Ingresa un valor"); return; }
-
   showLoading();
-  const res = await api("adminAdjPoints", { cedula, delta, nota, adminPassword: state.adminPass });
+  const res = await api("adminAdjPoints", { correo, delta, adminPassword: state.adminPass });
   hideLoading();
   if (!res.ok) { toast("❌ " + res.error); return; }
   toast(`✅ Puntos actualizados: ${res.puntosNuevos}`);
-  loadAdminClientDetail(cedula);
+  loadAdminClientDetail(correo);
 }
 
 async function adminVerifyResena() {
-  const cedula = document.getElementById("admin-client-detail").dataset.cedula;
+  const correo = document.getElementById("admin-client-detail").dataset.correo;
   showLoading();
-  const res = await api("verifyResena", { cedula, adminPassword: state.adminPass });
+  const res = await api("verifyResena", { correo, adminPassword: state.adminPass });
   hideLoading();
   if (!res.ok) { toast("❌ " + res.error); return; }
   toast("✅ Reseña verificada. Se envió correo al cliente.");
-  loadAdminClientDetail(cedula);
+  loadAdminClientDetail(correo);
 }
 
 async function createFlash() {
@@ -340,33 +389,34 @@ async function createFlash() {
   const nivel_minimo   = document.getElementById("flash-nivel").value;
   const duracion_horas = document.getElementById("flash-horas").value;
   if (!texto) { toast("Escribe el mensaje del flash"); return; }
-
   showLoading();
   const res = await api("createFlash", { texto, nivel_minimo, duracion_horas, adminPassword: state.adminPass });
   hideLoading();
   if (!res.ok) { toast("❌ " + res.error); return; }
-  toast("⚡ Flash activado y correos enviados!");
+  toast("⚡ Flash activado!");
   document.getElementById("flash-texto").value = "";
 }
 
-// ── POS ───────────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════
+//  POS
+// ════════════════════════════════════════════════════════════
+
 async function loadProducts() {
   const res = await api("getProducts");
   if (res.ok) state.products = res.productos;
 }
 
 async function posLoadManual() {
-  const cedula = document.getElementById("pos-cedula-manual").value.trim();
-  if (!cedula) return;
-  await posLoadClient(cedula);
+  const correo = document.getElementById("pos-correo-manual").value.trim().toLowerCase();
+  if (!correo) return;
+  await posLoadClient(correo);
 }
 
-async function posLoadClient(cedula) {
+async function posLoadClient(correo) {
   showLoading();
-  const res = await api("getProfile", { cedula });
+  const res = await api("getProfile", { correo });
   hideLoading();
   if (!res.ok) { toast("❌ Cliente no encontrado"); return; }
-
   state.posClient = res;
   renderPosClient(res);
 }
@@ -375,57 +425,48 @@ function renderPosClient(res) {
   const { cliente, puntos, promos } = res;
   document.getElementById("pos-client-card").classList.remove("hidden");
   document.getElementById("pos-products-section").classList.remove("hidden");
-  document.getElementById("pos-client-name").textContent = cliente.nombre;
-
+  const nombreDisplay = cliente.nombre || cliente.correo.split("@")[0];
+  document.getElementById("pos-client-name").textContent = nombreDisplay;
   const nivelEmoji = { "Vecino": "🌿", "Habitual": "☕", "De la casa": "🥐" };
-  document.getElementById("pos-client-nivel").textContent =
-    (nivelEmoji[cliente.nivel] || "") + " " + cliente.nivel;
+  document.getElementById("pos-client-nivel").textContent = (nivelEmoji[cliente.nivel] || "") + " " + cliente.nivel;
   document.getElementById("pos-client-pts").textContent = puntos.acumulados;
 
-  // Promos
   const promosEl = document.getElementById("pos-promos");
   promosEl.innerHTML = "";
 
   if (puntos.acumulados >= 10) {
-    const btn = document.createElement("button");
-    btn.className = "pos-promo-btn";
-    btn.textContent = `🎁 Tiene ${puntos.acumulados} puntos — canjear rollito`;
-    btn.onclick = async () => {
-      const r = await api("redeemPoints", { cedula: cliente.cedula });
+    addPosPromoBtn(promosEl, `🎁 ${puntos.acumulados} puntos — canjear rollito`, async () => {
+      const r = await api("redeemPoints", { correo: cliente.correo });
       toast(r.ok ? "🎁 Rollito canjeado!" : "❌ " + r.error);
-      if (r.ok) posLoadClient(cliente.cedula);
-    };
-    promosEl.appendChild(btn);
+      if (r.ok) posLoadClient(cliente.correo);
+    });
   }
-
   if (promos.cajaSemanalDisponible) {
-    const btn = document.createElement("button");
-    btn.className = "pos-promo-btn";
-    btn.textContent = "📦 Caja semanal disponible — canjear";
-    btn.onclick = async () => {
-      const r = await api("redeemCaja", { cedula: cliente.cedula });
+    addPosPromoBtn(promosEl, "📦 Caja semanal — canjear", async () => {
+      const r = await api("redeemCaja", { correo: cliente.correo });
       toast(r.ok ? "📦 Caja canjeada!" : "❌ " + r.error);
-      if (r.ok) posLoadClient(cliente.cedula);
-    };
-    promosEl.appendChild(btn);
+      if (r.ok) posLoadClient(cliente.correo);
+    });
   }
-
   if (promos.cumpleDisponible) {
-    const btn = document.createElement("button");
-    btn.className = "pos-promo-btn";
-    btn.style.background = "var(--dorado)";
-    btn.textContent = "🎂 Rollito cumpleañero disponible — canjear";
-    btn.onclick = async () => {
-      const r = await api("redeemCumple", { cedula: cliente.cedula });
+    addPosPromoBtn(promosEl, "🎂 Rollito cumpleañero — canjear", async () => {
+      const r = await api("redeemCumple", { correo: cliente.correo });
       toast(r.ok ? "🎂 Rollito cumpleañero canjeado!" : "❌ " + r.error);
-      if (r.ok) posLoadClient(cliente.cedula);
-    };
-    promosEl.appendChild(btn);
+      if (r.ok) posLoadClient(cliente.correo);
+    }, "var(--dorado)");
   }
 
-  // Products
   state.cart = {};
   renderProductList();
+}
+
+function addPosPromoBtn(container, label, onClick, bg) {
+  const btn = document.createElement("button");
+  btn.className = "pos-promo-btn";
+  if (bg) btn.style.background = bg;
+  btn.textContent = label;
+  btn.onclick = onClick;
+  container.appendChild(btn);
 }
 
 function renderProductList() {
@@ -435,16 +476,15 @@ function renderProductList() {
     const qty = state.cart[p.id] || 0;
     const div = document.createElement("div");
     div.className = "product-item";
-    div.id = "prod-item-" + p.id;
     div.innerHTML = `
       <div>
         <p class='product-name'>${p.nombre}</p>
         <p class='product-price'>$${p.precio.toLocaleString("es-CO")} · ${p.puntos} pto</p>
       </div>
       <div class='qty-ctrl'>
-        <button class='qty-btn' onclick='changeQty("${p.id}", -1)'>−</button>
+        <button class='qty-btn' onclick='changeQty("${p.id}",-1)'>−</button>
         <span class='qty-num' id='qty-${p.id}'>${qty}</span>
-        <button class='qty-btn' onclick='changeQty("${p.id}", 1)'>+</button>
+        <button class='qty-btn' onclick='changeQty("${p.id}",1)'>+</button>
       </div>`;
     listEl.appendChild(div);
   });
@@ -458,37 +498,27 @@ function changeQty(productId, delta) {
 }
 
 function updateCartTotal() {
-  let total = 0;
-  state.products.forEach(p => { total += (state.cart[p.id] || 0) * p.puntos; });
+  const total = state.products.reduce((s, p) => s + (state.cart[p.id] || 0) * p.puntos, 0);
   document.getElementById("pos-total-pts").textContent = total;
 }
 
 async function confirmSale() {
   if (!state.posClient) return;
-  const cedula = state.posClient.cliente.cedula;
-
-  const items = state.products
-    .filter(p => (state.cart[p.id] || 0) > 0)
-    .map(p => `${p.nombre} x${state.cart[p.id]}`);
-
-  if (items.length === 0) { toast("Selecciona al menos un producto"); return; }
-
+  const correo = state.posClient.cliente.correo;
+  const items  = state.products.filter(p => (state.cart[p.id] || 0) > 0)
+                               .map(p => `${p.nombre} x${state.cart[p.id]}`);
+  if (!items.length) { toast("Selecciona al menos un producto"); return; }
   const puntos_sumados = state.products.reduce((s, p) => s + (state.cart[p.id] || 0) * p.puntos, 0);
-  const productos = items.join(", ");
-
   showLoading();
-  const res = await api("registerSale", { cedula, productos, puntos_sumados });
+  const res = await api("registerSale", { correo, productos: items.join(", "), puntos_sumados });
   hideLoading();
-
   if (!res.ok) { toast("❌ " + res.error); return; }
-  toast(`✅ Venta registrada. +${puntos_sumados} pts para ${state.posClient.cliente.nombre}`);
-
-  // Reset
+  toast(`✅ Venta registrada. +${puntos_sumados} pts para ${state.posClient.cliente.nombre || correo}`);
   state.cart = {};
   state.posClient = null;
   document.getElementById("pos-client-card").classList.add("hidden");
   document.getElementById("pos-products-section").classList.add("hidden");
-  document.getElementById("pos-cedula-manual").value = "";
+  document.getElementById("pos-correo-manual").value = "";
 }
 
 // ── QR SCANNER ────────────────────────────────────────────────
@@ -496,50 +526,30 @@ async function startScan() {
   const wrap  = document.getElementById("pos-camera-wrap");
   const video = document.getElementById("pos-video");
   wrap.classList.remove("hidden");
-
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "environment" }
-    });
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
     state.scanStream = stream;
     video.srcObject = stream;
-
+    if (!window.jsQR) await loadScript("https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js");
     const canvas = document.getElementById("pos-canvas");
     const ctx = canvas.getContext("2d");
-
-    // Load jsQR dynamically
-    if (!window.jsQR) {
-      await loadScript("https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js");
-    }
-
     function tick() {
       if (!state.scanStream) return;
       if (video.readyState === video.HAVE_ENOUGH_DATA) {
         canvas.height = video.videoHeight;
         canvas.width  = video.videoWidth;
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const code = jsQR(imageData.data, imageData.width, imageData.height);
-        if (code) {
-          stopScan();
-          posLoadClient(code.data.trim());
-          return;
-        }
+        const code = jsQR(ctx.getImageData(0, 0, canvas.width, canvas.height).data, canvas.width, canvas.height);
+        if (code) { stopScan(); posLoadClient(code.data.trim()); return; }
       }
       requestAnimationFrame(tick);
     }
     tick();
-  } catch (err) {
-    toast("❌ No se pudo acceder a la cámara");
-    stopScan();
-  }
+  } catch(err) { toast("❌ No se pudo acceder a la cámara"); stopScan(); }
 }
 
 function stopScan() {
-  if (state.scanStream) {
-    state.scanStream.getTracks().forEach(t => t.stop());
-    state.scanStream = null;
-  }
+  if (state.scanStream) { state.scanStream.getTracks().forEach(t => t.stop()); state.scanStream = null; }
   document.getElementById("pos-camera-wrap").classList.add("hidden");
 }
 
@@ -549,35 +559,4 @@ function loadScript(src) {
     s.src = src; s.onload = res; s.onerror = rej;
     document.head.appendChild(s);
   });
-}
-
-// ── UTILS ─────────────────────────────────────────────────────
-function logout() {
-  state.cedula = null;
-  state.profile = null;
-  if (state.flashTimerInterval) clearInterval(state.flashTimerInterval);
-  showScreen("login");
-}
-
-function showErr(el, msg) {
-  el.textContent = msg;
-  el.classList.remove("hidden");
-}
-
-let loadingEl;
-function showLoading() {
-  if (!loadingEl) {
-    loadingEl = document.createElement("div");
-    loadingEl.style.cssText = `
-      position:fixed;inset:0;background:rgba(250,246,239,.7);
-      display:flex;align-items:center;justify-content:center;
-      z-index:9999;font-size:2.5rem;
-    `;
-    loadingEl.textContent = "🦋";
-    document.body.appendChild(loadingEl);
-  }
-  loadingEl.style.display = "flex";
-}
-function hideLoading() {
-  if (loadingEl) loadingEl.style.display = "none";
 }

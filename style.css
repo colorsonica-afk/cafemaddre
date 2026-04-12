@@ -438,3 +438,88 @@ html, body {
   text-align: center;
 }
 @keyframes slideUp { from { opacity:0; transform: translateX(-50%) translateY(12px); } to { opacity:1; transform: translateX(-50%) translateY(0); } }
+
+/* ── ONBOARDING ──────────────────────────────────────────── */
+.login-sub { color: var(--text-lt); font-size: .9rem; margin-bottom: 1.25rem; }
+
+.onboarding-wrap {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 2rem 1rem;
+  background: linear-gradient(160deg, var(--crema) 0%, var(--crema2) 100%);
+}
+.brand-block-sm {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  margin-bottom: 1.5rem;
+  font-size: 1.1rem;
+}
+.brand-name-sm {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  color: var(--cafe);
+  font-size: 1.4rem;
+}
+
+/* Barra de pasos */
+.pasos-bar {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding: 0 .5rem;
+}
+.paso-dot {
+  width: 1rem; height: 1rem;
+  border-radius: 50%;
+  background: var(--crema2);
+  border: 2px solid var(--border);
+  transition: all .3s;
+  flex-shrink: 0;
+}
+.paso-dot.activo { background: var(--cafe); border-color: var(--cafe); }
+.paso-line {
+  flex: 1;
+  height: 2px;
+  background: var(--border);
+}
+
+.onboarding-card { margin: 0; }
+.ob-step-label {
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--text-lt);
+  margin-bottom: .5rem;
+}
+.ob-desc {
+  color: var(--text-lt);
+  font-size: .9rem;
+  margin-bottom: 1.25rem;
+  line-height: 1.5;
+}
+
+/* Banner completar perfil */
+.completar-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--dorado);
+  color: var(--white);
+  padding: .85rem 1.25rem;
+  gap: 1rem;
+}
+.completar-title { font-weight: 500; font-size: .9rem; }
+.completar-sub   { font-size: .75rem; opacity: .85; margin-top: .15rem; }
+.completar-btn {
+  background: rgba(255,255,255,.25);
+  border: 1.5px solid rgba(255,255,255,.5);
+  color: var(--white);
+  padding: .4rem .9rem;
+  border-radius: var(--radius-sm);
+  font-family: 'DM Sans', sans-serif;
+  font-size: .85rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
