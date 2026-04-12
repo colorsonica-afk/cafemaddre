@@ -4,7 +4,7 @@
 //  después de desplegarlo como Web App.
 // ============================================================
 
-const SCRIPT_URL = "PEGA_AQUI_TU_URL_DE_APPS_SCRIPT";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbylSrBu84KEaLl19Jny5YSt2iTgRdUfdVEfpseT_KMdjkGvA2Z-5y5pC-XqSto-Lz99GQ/exec";
 
 // ── State ────────────────────────────────────────────────────
 let state = {
