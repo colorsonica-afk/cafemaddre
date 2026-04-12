@@ -76,13 +76,8 @@ async function doIniciar() {
 
   state.correo = correo;
 
-  // Redirigir según paso
-  if (res.paso >= 4) {
-    // Perfil completo — cargar y mostrar
-    await loadAndShowProfile();
-  } else {
-    mostrarPaso(res.paso);
-  }
+  // Siempre entra al perfil — el banner interno invita a completar datos
+  await loadAndShowProfile();
 }
 
 // ── PASOS 1-3: completar datos ────────────────────────────────
@@ -132,12 +127,9 @@ async function completarPaso(paso) {
 
   if (!res.ok) { showErr(errEl, res.error); return; }
 
-  if (res.paso >= 4) {
-    if (res.puntosBono) toast("🎁 ¡+1 punto por completar tu perfil!");
-    await loadAndShowProfile();
-  } else {
-    mostrarPaso(res.paso);
-  }
+  if (res.puntosBono) toast("🎁 ¡+1 punto por completar tu perfil!");
+  // Siempre regresa al perfil después de cada paso
+  await loadAndShowProfile();
 }
 
 // ── PROFILE ───────────────────────────────────────────────────
