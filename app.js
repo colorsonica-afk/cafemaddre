@@ -3,7 +3,7 @@
 //  Registro progresivo: correo → cédula → nombre/WA → cumple
 // ============================================================
 
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbylSrBu84KEaLl19Jny5YSt2iTgRdUfdVEfpseT_KMdjkGvA2Z-5y5pC-XqSto-Lz99GQ/exec";
+const SCRIPT_URL = "PEGA_AQUI_TU_URL_DE_APPS_SCRIPT";
 
 // ── State ─────────────────────────────────────────────────────
 let state = {
@@ -330,8 +330,8 @@ async function adminAuthAndGo(destination) {
     renderDaySummary(res);
     showScreen("admin");
   } else {
-    await loadProducts();
     showScreen("pos");
+    await initPOS();
   }
 }
 
@@ -418,130 +418,205 @@ async function createFlash() {
 //  POS
 // ════════════════════════════════════════════════════════════
 
-async function loadProducts() {
+let posState = {
+  sector: null,
+  items: [],       // [{nombre, variedad, cantidad, precio}]
+  qty: 1,
+  config: null,
+};
+
+async function initPOS() {
+  showLoading();
   const res = await api("getProducts");
-  if (res.ok) state.products = res.productos;
-}
-
-async function posLoadManual() {
-  const correo = document.getElementById("pos-correo-manual").value.trim().toLowerCase();
-  if (!correo) return;
-  await posLoadClient(correo);
-}
-
-async function posLoadClient(correo) {
-  showLoading();
-  const res = await api("getProfile", { correo });
   hideLoading();
-  if (!res.ok) { toast("❌ Cliente no encontrado"); return; }
-  state.posClient = res;
-  renderPosClient(res);
+  if (!res.ok) { toast("Error cargando config"); return; }
+  posState.config = res;
+  renderSectores(res.sectores);
+  renderProductoSelect(res.productos);
+  posShowStep("sector");
 }
 
-function renderPosClient(res) {
-  const { cliente, puntos, promos } = res;
-  document.getElementById("pos-client-card").classList.remove("hidden");
-  document.getElementById("pos-products-section").classList.remove("hidden");
-  const nombreDisplay = cliente.nombre || cliente.correo.split("@")[0];
-  document.getElementById("pos-client-name").textContent = nombreDisplay;
-  const nivelEmoji = { "Vecino": "🌿", "Habitual": "☕", "De la casa": "🥐" };
-  document.getElementById("pos-client-nivel").textContent = (nivelEmoji[cliente.nivel] || "") + " " + cliente.nivel;
-  document.getElementById("pos-client-pts").textContent = puntos.acumulados;
-
-  const promosEl = document.getElementById("pos-promos");
-  promosEl.innerHTML = "";
-
-  if (puntos.acumulados >= 10) {
-    addPosPromoBtn(promosEl, `🎁 ${puntos.acumulados} puntos — canjear rollito`, async () => {
-      const r = await api("redeemPoints", { correo: cliente.correo });
-      toast(r.ok ? "🎁 Rollito canjeado!" : "❌ " + r.error);
-      if (r.ok) posLoadClient(cliente.correo);
-    });
-  }
-  if (promos.cajaSemanalDisponible) {
-    addPosPromoBtn(promosEl, "📦 Caja semanal — canjear", async () => {
-      const r = await api("redeemCaja", { correo: cliente.correo });
-      toast(r.ok ? "📦 Caja canjeada!" : "❌ " + r.error);
-      if (r.ok) posLoadClient(cliente.correo);
-    });
-  }
-  if (promos.cumpleDisponible) {
-    addPosPromoBtn(promosEl, "🎂 Rollito cumpleañero — canjear", async () => {
-      const r = await api("redeemCumple", { correo: cliente.correo });
-      toast(r.ok ? "🎂 Rollito cumpleañero canjeado!" : "❌ " + r.error);
-      if (r.ok) posLoadClient(cliente.correo);
-    }, "var(--dorado)");
-  }
-
-  state.cart = {};
-  renderProductList();
-}
-
-function addPosPromoBtn(container, label, onClick, bg) {
-  const btn = document.createElement("button");
-  btn.className = "pos-promo-btn";
-  if (bg) btn.style.background = bg;
-  btn.textContent = label;
-  btn.onclick = onClick;
-  container.appendChild(btn);
-}
-
-function renderProductList() {
-  const listEl = document.getElementById("pos-product-list");
-  listEl.innerHTML = "";
-  state.products.forEach(p => {
-    const qty = state.cart[p.id] || 0;
-    const div = document.createElement("div");
-    div.className = "product-item";
-    div.innerHTML = `
-      <div>
-        <p class='product-name'>${p.nombre}</p>
-        <p class='product-price'>$${p.precio.toLocaleString("es-CO")} · ${p.puntos} pto</p>
-      </div>
-      <div class='qty-ctrl'>
-        <button class='qty-btn' onclick='changeQty("${p.id}",-1)'>−</button>
-        <span class='qty-num' id='qty-${p.id}'>${qty}</span>
-        <button class='qty-btn' onclick='changeQty("${p.id}",1)'>+</button>
-      </div>`;
-    listEl.appendChild(div);
+// ── PASO 1: Sector ────────────────────────────────────────────
+function renderSectores(sectores) {
+  const el = document.getElementById("pos-sector-list");
+  el.innerHTML = "";
+  sectores.forEach(s => {
+    const btn = document.createElement("button");
+    btn.className = "chip";
+    btn.textContent = s;
+    btn.onclick = () => posSelSector(s);
+    el.appendChild(btn);
   });
-  updateCartTotal();
 }
 
-function changeQty(productId, delta) {
-  state.cart[productId] = Math.max(0, (state.cart[productId] || 0) + delta);
-  document.getElementById("qty-" + productId).textContent = state.cart[productId];
-  updateCartTotal();
+function posSelSector(sector) {
+  posState.sector = sector;
+  posState.items = [];
+  document.getElementById("pos-sector-label").textContent = sector;
+  document.getElementById("pos-items-list").innerHTML = "";
+  document.getElementById("pos-total-wrap").classList.add("hidden");
+  posShowStep("pedido");
 }
 
-function updateCartTotal() {
-  const total = state.products.reduce((s, p) => s + (state.cart[p.id] || 0) * p.puntos, 0);
-  document.getElementById("pos-total-pts").textContent = total;
+function posVolverSector() { posShowStep("sector"); }
+
+// ── PASO 2: Pedido ────────────────────────────────────────────
+function renderProductoSelect(productos) {
+  const sel = document.getElementById("pos-sel-producto");
+  sel.innerHTML = '<option value="">— selecciona —</option>';
+  productos.forEach(p => {
+    const opt = document.createElement("option");
+    opt.value = p.nombre;
+    opt.dataset.precio = p.precio;
+    opt.textContent = `${p.nombre}  $${Number(p.precio).toLocaleString("es-CO")}`;
+    sel.appendChild(opt);
+  });
 }
 
-async function confirmSale() {
-  if (!state.posClient) return;
-  const correo = state.posClient.cliente.correo;
-  const items  = state.products.filter(p => (state.cart[p.id] || 0) > 0)
-                               .map(p => `${p.nombre} x${state.cart[p.id]}`);
-  if (!items.length) { toast("Selecciona al menos un producto"); return; }
-  const puntos_sumados = state.products.reduce((s, p) => s + (state.cart[p.id] || 0) * p.puntos, 0);
-  showLoading();
-  const res = await api("registerSale", { correo, productos: items.join(", "), puntos_sumados });
-  hideLoading();
-  if (!res.ok) { toast("❌ " + res.error); return; }
-  toast(`✅ Venta registrada. +${puntos_sumados} pts para ${state.posClient.cliente.nombre || correo}`);
-  state.cart = {};
-  state.posClient = null;
-  document.getElementById("pos-client-card").classList.add("hidden");
-  document.getElementById("pos-products-section").classList.add("hidden");
+function posProductoChange() {
+  const sel   = document.getElementById("pos-sel-producto");
+  const nombre = sel.value.toUpperCase();
+  const varWrap = document.getElementById("pos-variedad-wrap");
+  const varSel  = document.getElementById("pos-sel-variedad");
+
+  varWrap.classList.add("hidden");
+  varSel.innerHTML = '<option value="">— selecciona —</option>';
+
+  let sabores = [];
+  if (nombre.includes("ROLLITO")) sabores = posState.config.saboresRollito || [];
+  else if (nombre.includes("BAGUETTE")) sabores = posState.config.saboresBaguette || [];
+
+  if (sabores.length) {
+    sabores.forEach(s => {
+      const opt = document.createElement("option");
+      opt.value = s; opt.textContent = s;
+      varSel.appendChild(opt);
+    });
+    varWrap.classList.remove("hidden");
+  }
+}
+
+function posQtyChange(delta) {
+  posState.qty = Math.max(1, (posState.qty || 1) + delta);
+  document.getElementById("pos-qty-val").textContent = posState.qty;
+}
+
+function posAgregarItem() {
+  const sel     = document.getElementById("pos-sel-producto");
+  const nombre  = sel.value;
+  const precio  = Number(sel.selectedOptions[0]?.dataset.precio || 0);
+  const varSel  = document.getElementById("pos-sel-variedad");
+  const varWrap = document.getElementById("pos-variedad-wrap");
+  const variedad = !varWrap.classList.contains("hidden") ? varSel.value : "";
+  const cantidad = posState.qty || 1;
+
+  if (!nombre) { toast("Selecciona un producto"); return; }
+  if (!varWrap.classList.contains("hidden") && !variedad) { toast("Selecciona la variedad"); return; }
+
+  posState.items.push({ nombre, variedad, cantidad, precio });
+  posState.qty = 1;
+  document.getElementById("pos-qty-val").textContent = 1;
+  sel.value = "";
+  varWrap.classList.add("hidden");
+  renderItemsList();
+}
+
+function renderItemsList() {
+  const el = document.getElementById("pos-items-list");
+  el.innerHTML = "";
+  let total = 0;
+  posState.items.forEach((item, idx) => {
+    const subtotal = item.precio * item.cantidad;
+    total += subtotal;
+    const div = document.createElement("div");
+    div.className = "pos-item-row";
+    div.innerHTML = `
+      <div class="pos-item-info">
+        <p class="pos-item-name">${item.nombre}${item.variedad ? " · " + item.variedad : ""}</p>
+        <p class="pos-item-detail">x${item.cantidad} · $${subtotal.toLocaleString("es-CO")}</p>
+      </div>
+      <button class="pos-item-del" onclick="posEliminarItem(${idx})">✕</button>`;
+    el.appendChild(div);
+  });
+
+  const totalWrap = document.getElementById("pos-total-wrap");
+  if (posState.items.length > 0) {
+    totalWrap.classList.remove("hidden");
+    document.getElementById("pos-total-val").textContent = "$" + total.toLocaleString("es-CO");
+  } else {
+    totalWrap.classList.add("hidden");
+  }
+}
+
+function posEliminarItem(idx) {
+  posState.items.splice(idx, 1);
+  renderItemsList();
+}
+
+function posSiguienteCliente() {
   document.getElementById("pos-correo-manual").value = "";
+  posShowStep("cliente");
 }
 
-// ── QR SCANNER ────────────────────────────────────────────────
+// ── PASO 3: Cliente ───────────────────────────────────────────
+async function posConfirmarConCliente() {
+  const correo = document.getElementById("pos-correo-manual").value.trim().toLowerCase();
+  if (!correo) { toast("Ingresa el correo o factura sin cliente"); return; }
+  await posRegistrarVenta(correo);
+}
+
+async function posConfirmarSinCliente() {
+  await posRegistrarVenta(null);
+}
+
+async function posRegistrarVenta(correo) {
+  const productos = posState.items.map(i =>
+    `${i.nombre}${i.variedad ? " (" + i.variedad + ")" : ""} x${i.cantidad}`
+  ).join(", ");
+  const total = posState.items.reduce((s, i) => s + i.precio * i.cantidad, 0);
+
+  showLoading();
+  const res = await api("registerSale", {
+    correo: correo || "",
+    sector: posState.sector,
+    productos,
+    total,
+    puntos_sumados: correo ? 1 : 0,
+  });
+  hideLoading();
+
+  if (!res.ok) { toast("❌ " + res.error); return; }
+
+  const resumen = correo
+    ? `${posState.sector} · $${total.toLocaleString("es-CO")} · +1 pto para ${correo.split("@")[0]}`
+    : `${posState.sector} · $${total.toLocaleString("es-CO")} · sin cliente`;
+
+  document.getElementById("pos-ok-resumen").textContent = resumen;
+  posShowStep("ok");
+}
+
+// ── Nav ───────────────────────────────────────────────────────
+function posShowStep(step) {
+  ["sector", "pedido", "cliente", "ok"].forEach(s => {
+    document.getElementById("pos-step-" + s).classList.add("hidden");
+  });
+  document.getElementById("pos-step-" + step).classList.remove("hidden");
+}
+
+function posReset() {
+  posState = { sector: null, items: [], qty: 1, config: posState.config };
+  if (posState.config) {
+    posShowStep("sector");
+  } else {
+    showScreen("admin-login");
+  }
+}
+
+// ── QR Scanner (guardado para después) ───────────────────────
 async function startScan() {
   const wrap  = document.getElementById("pos-camera-wrap");
   const video = document.getElementById("pos-video");
+  if (!wrap || !video) return;
   wrap.classList.remove("hidden");
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
@@ -567,7 +642,8 @@ async function startScan() {
 
 function stopScan() {
   if (state.scanStream) { state.scanStream.getTracks().forEach(t => t.stop()); state.scanStream = null; }
-  document.getElementById("pos-camera-wrap").classList.add("hidden");
+  const wrap = document.getElementById("pos-camera-wrap");
+  if (wrap) wrap.classList.add("hidden");
 }
 
 function loadScript(src) {

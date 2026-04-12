@@ -536,3 +536,120 @@ html, body {
   border-radius: 99px;
   transition: width .5s ease;
 }
+
+/* ── POS NUEVO ───────────────────────────────────────────── */
+.pos-step { padding: .5rem 0 1rem; }
+.pos-step-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem;
+  color: var(--cafe);
+  padding: 1rem 1.25rem .75rem;
+}
+.pos-pedido-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-right: 1rem;
+}
+.pos-sector-tag {
+  background: var(--verde);
+  color: var(--white);
+  font-size: .75rem;
+  font-family: 'DM Sans', sans-serif;
+  padding: .2rem .65rem;
+  border-radius: 99px;
+  margin-left: .5rem;
+}
+
+/* Chips de sector */
+.pos-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .6rem;
+  padding: .5rem 1.25rem 1rem;
+}
+.chip {
+  padding: .65rem 1.25rem;
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 99px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: .95rem;
+  cursor: pointer;
+  color: var(--text);
+  transition: all .15s;
+  box-shadow: var(--shadow);
+}
+.chip:hover, .chip.active {
+  background: var(--cafe);
+  color: var(--white);
+  border-color: var(--cafe);
+}
+
+/* Agregar card */
+.pos-agregar-card { margin: 0 1rem .5rem; }
+.pos-agregar-title {
+  font-weight: 500;
+  color: var(--cafe);
+  margin-bottom: 1rem;
+}
+
+/* Items list */
+.pos-items-list {
+  margin: 0 1rem .5rem;
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
+}
+.pos-item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: .65rem .85rem;
+  box-shadow: var(--shadow);
+}
+.pos-item-name { font-weight: 500; font-size: .9rem; color: var(--text); }
+.pos-item-detail { font-size: .8rem; color: var(--text-lt); margin-top: .1rem; }
+.pos-item-del {
+  background: none;
+  border: none;
+  color: var(--text-lt);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: .25rem .5rem;
+}
+.pos-item-del:hover { color: #c0392b; }
+
+/* Total card */
+.pos-total-card { margin: .5rem 1rem; }
+.pos-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: .5rem 0 1rem;
+  font-size: 1rem;
+  color: var(--text-lt);
+}
+.pos-total-row strong {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.8rem;
+  color: var(--cafe);
+}
+
+/* OK screen */
+.pos-ok-card {
+  text-align: center;
+  padding: 2.5rem 1.5rem;
+  margin: 2rem 1rem;
+}
+.pos-ok-emoji { font-size: 3rem; margin-bottom: .75rem; }
+.pos-ok-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.6rem;
+  color: var(--cafe);
+  margin-bottom: .5rem;
+}
+.pos-ok-sub { color: var(--text-lt); font-size: .9rem; margin-bottom: 1.5rem; }

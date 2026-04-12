@@ -41,6 +41,7 @@
       <div id="login-error" class="error-msg hidden"></div>
       <button id="btn-continuar" class="btn-primary" onclick="doIniciar()">Continuar →</button>
       <button class="btn-link" onclick="showAdminLogin()">Soy del equipo →</button>
+      <a id="link-pos" href="#posmaddre" style="display:none"></a>
     </div>
   </div>
 </div>
@@ -151,7 +152,7 @@
       </div>
       <div class="points-progress-wrap">
         <div id="points-dots" class="points-dots"></div>
-        <p class="points-sub">para tu rollito gratis 🥐</p>
+        <p class="points-sub">para tu rollito gratis</p>
       </div>
     </div>
     <button id="btn-redeem-pts" class="btn-primary" onclick="redeemPoints()" disabled>
@@ -216,7 +217,7 @@
     </div>
     <div id="admin-login-error" class="error-msg hidden"></div>
     <button class="btn-primary" onclick="adminAuthAndGo('admin')">Panel Admin</button>
-    <button class="btn-ghost"   onclick="adminAuthAndGo('pos')">Ir a POS / Caja</button>
+    <button id="admin-login-btn-pos" class="btn-ghost" onclick="adminAuthAndGo('pos')">Ir a Caja 🦋</button>
   </div>
 </div>
 
@@ -284,54 +285,104 @@
 <!-- ── POS ─────────────────────────────────────────────────── -->
 <div id="screen-pos" class="screen">
   <div class="topbar">
-    <button class="back-btn" onclick="showScreen('admin-login')">← Salir</button>
-    <h2>Punto de venta</h2>
+    <button class="back-btn" onclick="posReset()">← Salir</button>
+    <h2>🦋 Caja</h2>
+    <button class="icon-btn" onclick="posReset()">✕</button>
   </div>
   <div class="scroll-wrap">
-    <div class="card">
-      <button class="btn-primary scan-btn" onclick="startScan()">📷 Escanear QR del cliente</button>
-      <p class="divider-text">— o buscar por correo —</p>
-      <div class="field">
-        <input id="pos-correo-manual" type="email" inputmode="email" placeholder="correo@ejemplo.com">
+
+    <!-- PASO 1: Sector -->
+    <div id="pos-step-sector" class="pos-step">
+      <p class="pos-step-title">¿Dónde?</p>
+      <div id="pos-sector-list" class="pos-chips"></div>
+    </div>
+
+    <!-- PASO 2: Pedido -->
+    <div id="pos-step-pedido" class="pos-step hidden">
+      <div class="pos-pedido-header">
+        <p class="pos-step-title">Pedido <span id="pos-sector-label" class="pos-sector-tag"></span></p>
+        <button class="btn-link" onclick="posVolverSector()">cambiar sector</button>
       </div>
-      <button class="btn-ghost" onclick="posLoadManual()">Cargar cliente</button>
-    </div>
 
-    <div id="pos-camera-wrap" class="card hidden">
-      <video id="pos-video" autoplay playsinline style="width:100%;border-radius:8px"></video>
-      <canvas id="pos-canvas" style="display:none"></canvas>
-      <button class="btn-ghost" onclick="stopScan()">✕ Cancelar</button>
-    </div>
+      <!-- Lista de items agregados -->
+      <div id="pos-items-list" class="pos-items-list"></div>
 
-    <div id="pos-client-card" class="card hidden">
-      <div class="pos-client-top">
-        <div>
-          <p id="pos-client-name" class="pos-name"></p>
-          <span id="pos-client-nivel" class="nivel-badge" style="background:var(--verde);display:inline-block;margin-top:.3rem"></span>
+      <!-- Agregar producto -->
+      <div class="card pos-agregar-card">
+        <p class="pos-agregar-title">+ Agregar producto</p>
+        <div class="field">
+          <label>Producto</label>
+          <select id="pos-sel-producto" onchange="posProductoChange()">
+            <option value="">— selecciona —</option>
+          </select>
         </div>
-        <div style="text-align:right">
-          <p class="points-label">Puntos</p>
-          <p id="pos-client-pts" class="points-big" style="font-size:2rem"></p>
+        <div id="pos-variedad-wrap" class="field hidden">
+          <label>Variedad</label>
+          <select id="pos-sel-variedad">
+            <option value="">— selecciona —</option>
+          </select>
         </div>
+        <div class="field">
+          <label>Cantidad</label>
+          <div class="qty-ctrl">
+            <button class="qty-btn" onclick="posQtyChange(-1)">−</button>
+            <span id="pos-qty-val" class="qty-num">1</span>
+            <button class="qty-btn" onclick="posQtyChange(1)">+</button>
+          </div>
+        </div>
+        <button class="btn-ghost" onclick="posAgregarItem()">Agregar al pedido</button>
       </div>
-      <div id="pos-promos" class="pos-promos"></div>
+
+      <!-- Total -->
+      <div id="pos-total-wrap" class="card pos-total-card hidden">
+        <div class="pos-total-row">
+          <span>Total</span>
+          <strong id="pos-total-val">$0</strong>
+        </div>
+        <button class="btn-primary" onclick="posSiguienteCliente()">Continuar →</button>
+      </div>
     </div>
 
-    <div id="pos-products-section" class="card hidden">
-      <h3>Productos</h3>
-      <div id="pos-product-list" class="product-list"></div>
-      <div class="pos-total-row">
-        <span>Total puntos:</span>
-        <strong id="pos-total-pts">0</strong>
+    <!-- PASO 3: Cliente (opcional) -->
+    <div id="pos-step-cliente" class="pos-step hidden">
+      <p class="pos-step-title">¿Cliente del club?</p>
+      <div class="card">
+        <div class="field">
+          <label>Correo <span class="hint">(opcional)</span></label>
+          <input id="pos-correo-manual" type="email" inputmode="email" placeholder="correo@ejemplo.com">
+        </div>
+        <button class="btn-primary" onclick="posConfirmarConCliente()">Confirmar venta con cliente</button>
+        <button class="btn-ghost" onclick="posConfirmarSinCliente()">Facturar sin cliente</button>
       </div>
-      <button class="btn-primary" onclick="confirmSale()">✔ Confirmar venta</button>
     </div>
+
+    <!-- CONFIRMACIÓN -->
+    <div id="pos-step-ok" class="pos-step hidden">
+      <div class="card pos-ok-card">
+        <p class="pos-ok-emoji">🦋</p>
+        <p class="pos-ok-title">¡Venta registrada!</p>
+        <p id="pos-ok-resumen" class="pos-ok-sub"></p>
+        <button class="btn-primary" onclick="posReset()">Nueva venta</button>
+      </div>
+    </div>
+
   </div>
 </div>
 
 <!-- ── TOAST ───────────────────────────────────────────────── -->
 <div id="toast" class="toast hidden"></div>
 
+<script>
+// URL oculta: /cafemaddre/#posmaddre → va directo a caja
+window.addEventListener("hashchange", checkHash);
+function checkHash() {
+  if (location.hash === "#posmaddre") {
+    document.getElementById("admin-pass-input").value = "";
+    showScreen("admin-login");
+    document.getElementById("admin-login-btn-pos").click();
+  }
+}
+</script>
 <script src="app.js"></script>
 </body>
 </html>
