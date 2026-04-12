@@ -212,12 +212,43 @@
   </div>
   <div class="card" style="margin:1.5rem 1rem">
     <div class="field">
-      <label>Contraseña</label>
+      <label>Contraseña admin</label>
       <input id="admin-pass-input" type="password" placeholder="••••••••">
     </div>
     <div id="admin-login-error" class="error-msg hidden"></div>
     <button class="btn-primary" onclick="adminAuthAndGo('admin')">Panel Admin</button>
     <button id="admin-login-btn-pos" class="btn-ghost" onclick="adminAuthAndGo('pos')">Ir a Caja 🦋</button>
+  </div>
+</div>
+
+<!-- ── PIN CAJA ────────────────────────────────────────────── -->
+<div id="screen-pin" class="screen">
+  <div class="pin-wrap">
+    <div class="brand-block-sm" style="justify-content:center;margin-bottom:2rem">
+      <span>🦋</span>
+      <span class="brand-name-sm">Caja Maddre</span>
+    </div>
+    <div class="pin-display">
+      <span id="pin-dot-1" class="pin-dot"></span>
+      <span id="pin-dot-2" class="pin-dot"></span>
+      <span id="pin-dot-3" class="pin-dot"></span>
+      <span id="pin-dot-4" class="pin-dot"></span>
+    </div>
+    <div id="pin-error" class="error-msg hidden" style="margin:.75rem 1rem 0"></div>
+    <div class="pin-pad">
+      <button class="pin-btn" onclick="pinPress('1')">1</button>
+      <button class="pin-btn" onclick="pinPress('2')">2</button>
+      <button class="pin-btn" onclick="pinPress('3')">3</button>
+      <button class="pin-btn" onclick="pinPress('4')">4</button>
+      <button class="pin-btn" onclick="pinPress('5')">5</button>
+      <button class="pin-btn" onclick="pinPress('6')">6</button>
+      <button class="pin-btn" onclick="pinPress('7')">7</button>
+      <button class="pin-btn" onclick="pinPress('8')">8</button>
+      <button class="pin-btn" onclick="pinPress('9')">9</button>
+      <button class="pin-btn pin-btn-clear" onclick="pinClear()">✕</button>
+      <button class="pin-btn" onclick="pinPress('0')">0</button>
+      <button class="pin-btn pin-btn-ok" onclick="pinSubmit()">→</button>
+    </div>
   </div>
 </div>
 
@@ -356,12 +387,22 @@
       </div>
     </div>
 
-    <!-- CONFIRMACIÓN -->
+    <!-- CONFIRMACIÓN + RESUMEN DÍA -->
     <div id="pos-step-ok" class="pos-step hidden">
       <div class="card pos-ok-card">
         <p class="pos-ok-emoji">🦋</p>
         <p class="pos-ok-title">¡Venta registrada!</p>
         <p id="pos-ok-resumen" class="pos-ok-sub"></p>
+      </div>
+      <div class="card pos-resumen-dia">
+        <h3>Ventas de hoy</h3>
+        <div class="summary-grid">
+          <div><p id="dia-ventas" class="sum-num">-</p><p>ventas</p></div>
+          <div><p id="dia-total" class="sum-num">-</p><p>total</p></div>
+          <div><p id="dia-pts" class="sum-num">-</p><p>puntos</p></div>
+        </div>
+      </div>
+      <div style="padding:0 1rem 1rem">
         <button class="btn-primary" onclick="posReset()">Nueva venta</button>
       </div>
     </div>
@@ -372,20 +413,15 @@
 <!-- ── TOAST ───────────────────────────────────────────────── -->
 <div id="toast" class="toast hidden"></div>
 
-  <script>
+<script>
+// URL oculta: /cafemaddre/#posmaddre → va directo a caja
 window.addEventListener("hashchange", checkHash);
 function checkHash() {
   if (location.hash === "#posmaddre") {
-    setTimeout(() => showScreen("admin-login"), 900);
+    document.getElementById("admin-pass-input").value = "";
+    showScreen("admin-login");
+    document.getElementById("admin-login-btn-pos").click();
   }
-}
-window.addEventListener("load", () => {
-  if (location.hash === "#posmaddre") {
-    setTimeout(() => showScreen("admin-login"), 900);
-  }
-});
-</script>
-  
 }
 </script>
 <script src="app.js"></script>

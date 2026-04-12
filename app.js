@@ -1,9 +1,57 @@
+// ════════════════════════════════════════════════════════════
+//  PIN CAJA
+// ════════════════════════════════════════════════════════════
+let pinValue = "";
+
+function pinReset() {
+  pinValue = "";
+  updatePinDots();
+  document.getElementById("pin-error").classList.add("hidden");
+}
+
+function pinPress(digit) {
+  if (pinValue.length >= 4) return;
+  pinValue += digit;
+  updatePinDots();
+  if (pinValue.length === 4) setTimeout(pinSubmit, 150);
+}
+
+function pinClear() {
+  pinValue = pinValue.slice(0, -1);
+  updatePinDots();
+}
+
+function updatePinDots() {
+  for (let i = 1; i <= 4; i++) {
+    const dot = document.getElementById("pin-dot-" + i);
+    dot.classList.toggle("filled", i <= pinValue.length);
+  }
+}
+
+async function pinSubmit() {
+  if (pinValue.length < 4) { return; }
+  showLoading();
+  const res = await api("posAuth", { pin: pinValue });
+  hideLoading();
+  if (!res.ok) {
+    document.getElementById("pin-error").textContent = "PIN incorrecto";
+    document.getElementById("pin-error").classList.remove("hidden");
+    pinValue = "";
+    updatePinDots();
+    return;
+  }
+  state.adminPass = null; // POS no necesita admin pass
+  state.posPin = pinValue;
+  showScreen("pos");
+  await initPOS();
+}
+
 // ============================================================
 //  🦋 CAFÉ MADDRE — APP JS v2
 //  Registro progresivo: correo → cédula → nombre/WA → cumple
 // ============================================================
 
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbylSrBu84KEaLl19Jny5YSt2iTgRdUfdVEfpseT_KMdjkGvA2Z-5y5pC-XqSto-Lz99GQ/exec";
+const SCRIPT_URL = "PEGA_AQUI_TU_URL_DE_APPS_SCRIPT";
 
 // ── State ─────────────────────────────────────────────────────
 let state = {
@@ -593,6 +641,13 @@ async function posRegistrarVenta(correo) {
 
   document.getElementById("pos-ok-resumen").textContent = resumen;
   posShowStep("ok");
+  // Cargar resumen del día
+  const sumRes = await api("getDaySummary", { adminPassword: state.adminPass || "", pin: state.posPin || "" });
+  if (sumRes.ok) {
+    document.getElementById("dia-ventas").textContent = sumRes.ventasHoy;
+    document.getElementById("dia-total").textContent = "$" + (sumRes.totalHoy || 0).toLocaleString("es-CO");
+    document.getElementById("dia-pts").textContent = sumRes.puntosEntregados;
+  }
 }
 
 // ── Nav ───────────────────────────────────────────────────────
