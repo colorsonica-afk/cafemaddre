@@ -372,15 +372,20 @@
 <!-- ── TOAST ───────────────────────────────────────────────── -->
 <div id="toast" class="toast hidden"></div>
 
-<script>
-// URL oculta: /cafemaddre/#posmaddre → va directo a caja
+  <script>
 window.addEventListener("hashchange", checkHash);
 function checkHash() {
   if (location.hash === "#posmaddre") {
-    document.getElementById("admin-pass-input").value = "";
-    showScreen("admin-login");
-    document.getElementById("admin-login-btn-pos").click();
+    setTimeout(() => showScreen("admin-login"), 900);
   }
+}
+window.addEventListener("load", () => {
+  if (location.hash === "#posmaddre") {
+    setTimeout(() => showScreen("admin-login"), 900);
+  }
+});
+</script>
+  
 }
 </script>
 <script src="app.js"></script>
