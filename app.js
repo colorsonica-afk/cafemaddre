@@ -135,7 +135,7 @@ async function completarPaso(paso) {
 // ── PROFILE ───────────────────────────────────────────────────
 async function loadAndShowProfile() {
   showLoading();
-  const res = await api("login", { correo: state.correo });
+  const res = await api("getProfile", { correo: state.correo });
   hideLoading();
   if (!res.ok) { toast("Error: " + res.error); return; }
   state.profile = res;
