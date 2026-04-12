@@ -3,7 +3,7 @@
 //  Registro progresivo: correo → cédula → nombre/WA → cumple
 // ============================================================
 
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbylSrBu84KEaLl19Jny5YSt2iTgRdUfdVEfpseT_KMdjkGvA2Z-5y5pC-XqSto-Lz99GQ/exec";
+const SCRIPT_URL = "PEGA_AQUI_TU_URL_DE_APPS_SCRIPT";
 
 // ── State ─────────────────────────────────────────────────────
 let state = {
@@ -76,8 +76,32 @@ async function doIniciar() {
 
   state.correo = correo;
 
-  // Siempre entra al perfil — el banner interno invita a completar datos
+  // Si perfil completo (paso 4) → mostrar campo cédula
+  if (res.paso >= 4) {
+    document.getElementById("cedula-wrap").classList.remove("hidden");
+    document.getElementById("btn-continuar").onclick = doLoginConCedula;
+    document.getElementById("login-correo").disabled = true;
+    return;
+  }
+
+  // Perfil incompleto → entra directo
   await loadAndShowProfile();
+}
+
+async function doLoginConCedula() {
+  const cedula = document.getElementById("login-cedula").value.trim();
+  const errEl  = document.getElementById("login-error");
+  hideErr(errEl);
+  if (!cedula) { showErr(errEl, "Ingresa tu cédula"); return; }
+
+  showLoading();
+  const res = await api("login", { correo: state.correo, cedula });
+  hideLoading();
+
+  if (!res.ok) { showErr(errEl, res.error); return; }
+  state.profile = res;
+  renderProfile(res);
+  showScreen("profile");
 }
 
 // ── PASOS 1-3: completar datos ────────────────────────────────
@@ -218,9 +242,6 @@ function renderPromos(promos, cliente) {
   if (promos.cumpleDisponible) {
     btnCumple.disabled = false;
     cumpleDesc.textContent = "🎂 ¡Es tu mes! Rollito gratis";
-  } else if (promos.esMesCumple && !cliente.resena_maps) {
-    btnCumple.disabled = true;
-    cumpleDesc.textContent = "Necesitas reseña en Maps verificada";
   } else if (!promos.esMesCumple && promos.mesesParaCumple !== null && promos.mesesParaCumple > 0) {
     btnCumple.disabled = true;
     cumpleDesc.textContent = `Tu mes llega en ${promos.mesesParaCumple} mes(es)`;

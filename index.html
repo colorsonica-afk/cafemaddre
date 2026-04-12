@@ -34,8 +34,12 @@
         <label>Correo</label>
         <input id="login-correo" type="email" inputmode="email" placeholder="tu@correo.com" autocomplete="email">
       </div>
+      <div id="cedula-wrap" class="field hidden">
+        <label>Cédula <span class="hint">(tu contraseña)</span></label>
+        <input id="login-cedula" type="number" inputmode="numeric" placeholder="Número de cédula">
+      </div>
       <div id="login-error" class="error-msg hidden"></div>
-      <button class="btn-primary" onclick="doIniciar()">Continuar →</button>
+      <button id="btn-continuar" class="btn-primary" onclick="doIniciar()">Continuar →</button>
       <button class="btn-link" onclick="showAdminLogin()">Soy del equipo →</button>
     </div>
   </div>
