@@ -3,7 +3,7 @@
 //  Registro progresivo: correo → cédula → nombre/WA → cumple
 // ============================================================
 
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbylSrBu84KEaLl19Jny5YSt2iTgRdUfdVEfpseT_KMdjkGvA2Z-5y5pC-XqSto-Lz99GQ/exec";
+const SCRIPT_URL = "PEGA_AQUI_TU_URL_DE_APPS_SCRIPT";
 
 // ── State ─────────────────────────────────────────────────────
 let state = {
@@ -198,8 +198,9 @@ function renderProfile(res) {
   const dotsEl = document.getElementById("points-dots");
   dotsEl.innerHTML = "";
   for (let i = 0; i < 10; i++) {
-    const d = document.createElement("div");
-    d.className = "dot" + (i < puntos.acumulados ? " filled" : "");
+    const d = document.createElement("span");
+    d.className = "dot-emoji" + (i < puntos.acumulados ? " filled" : "");
+    d.textContent = "🦋";
     dotsEl.appendChild(d);
   }
   document.getElementById("btn-redeem-pts").disabled = puntos.acumulados < 10;
