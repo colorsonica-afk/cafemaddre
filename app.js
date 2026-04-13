@@ -68,8 +68,21 @@ let state = {
 // ── API ───────────────────────────────────────────────────────
 async function api(action, params = {}) {
   const qs  = new URLSearchParams({ action, ...params }).toString();
-  const res = await fetch(SCRIPT_URL + "?" + qs, { method: "GET", redirect: "follow" });
-  return res.json();
+  // Apps Script requiere follow redirect pero con mode cors
+  const res = await fetch(SCRIPT_URL + "?" + qs, {
+    method: "GET",
+    redirect: "follow",
+    headers: { "Content-Type": "text/plain" },
+  });
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch(e) {
+    // Si Google redirige a echo, extraer JSON del body
+    const match = text.match(/\{.*\}/s);
+    if (match) return JSON.parse(match[0]);
+    return { ok: false, error: "Error de conexión con el servidor" };
+  }
 }
 
 // ── Screens ───────────────────────────────────────────────────
