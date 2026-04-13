@@ -248,6 +248,10 @@
       <button class="pin-btn" onclick="pinPress('0')">0</button>
       <button class="pin-btn pin-btn-ok" onclick="pinSubmit()">→</button>
     </div>
+    <div id="pin-destino" class="pin-destino hidden">
+      <button class="btn-primary" onclick="pinIrA('pos')">🦋 Ir a Caja</button>
+      <button class="btn-ghost" onclick="pinIrA('admin')" style="margin-top:.5rem">⚙️ Panel Admin</button>
+    </div>
   </div>
 </div>
 
@@ -378,11 +382,16 @@
       <p class="pos-step-title">¿Cliente del club?</p>
       <div class="card">
         <div class="field">
-          <label>Correo <span class="hint">(opcional)</span></label>
-          <input id="pos-correo-manual" type="email" inputmode="email" placeholder="correo@ejemplo.com">
+          <label>Nombre o correo <span class="hint">(opcional)</span></label>
+          <input id="pos-search-cliente" type="text" placeholder="Ana o ana@correo.com" oninput="posBuscarCliente()">
         </div>
-        <button class="btn-primary" onclick="posConfirmarConCliente()">Confirmar venta con cliente</button>
-        <button class="btn-ghost" onclick="posConfirmarSinCliente()">Facturar sin cliente</button>
+        <div id="pos-search-results" class="search-results"></div>
+        <div id="pos-cliente-seleccionado" class="pos-cliente-sel hidden">
+          <p id="pos-cliente-sel-nombre" class="pos-name"></p>
+          <p id="pos-cliente-sel-correo" class="prof-sub"></p>
+          <button class="btn-primary" onclick="posConfirmarConCliente()">✔ Confirmar con este cliente</button>
+        </div>
+        <button class="btn-ghost" onclick="posConfirmarSinCliente()" style="margin-top:.75rem">Facturar sin cliente</button>
       </div>
     </div>
 

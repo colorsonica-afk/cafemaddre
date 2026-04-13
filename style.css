@@ -702,3 +702,20 @@ html, body {
 
 .pos-resumen-dia { margin: 0 1rem; }
 .pos-resumen-dia h3 { font-family: 'Playfair Display', serif; color: var(--cafe); margin-bottom: 1rem; }
+
+/* PIN destino buttons */
+.pin-destino {
+  margin-top: 1.5rem;
+  width: 100%;
+  max-width: 16rem;
+  animation: fadeIn .3s ease;
+}
+
+/* POS cliente seleccionado */
+.pos-cliente-sel {
+  background: var(--crema2);
+  border: 1.5px solid var(--verde);
+  border-radius: var(--radius-sm);
+  padding: .85rem 1rem;
+  margin: .5rem 0;
+}

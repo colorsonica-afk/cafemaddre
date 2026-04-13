@@ -40,18 +40,34 @@ async function pinSubmit() {
     updatePinDots();
     return;
   }
-  state.adminPass = null; // POS no necesita admin pass
   state.posPin = pinValue;
-  showScreen("pos");
-  await initPOS();
+  // Mostrar botones de destino
+  document.getElementById("pin-destino").classList.remove("hidden");
 }
+
+async function pinIrA(destino) {
+  if (destino === "pos") {
+    showScreen("pos");
+    await initPOS();
+  } else {
+    // Panel admin — usar PIN como autenticación
+    state.adminPass = POS_PIN_CLIENT;
+    showLoading();
+    const res = await api("getDaySummary", { pin: state.posPin });
+    hideLoading();
+    if (res.ok) renderDaySummary(res);
+    showScreen("admin");
+  }
+}
+
+const POS_PIN_CLIENT = "__pin__"; // marcador interno
 
 // ============================================================
 //  🦋 CAFÉ MADDRE — APP JS v2
 //  Registro progresivo: correo → cédula → nombre/WA → cumple
 // ============================================================
 
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbylSrBu84KEaLl19Jny5YSt2iTgRdUfdVEfpseT_KMdjkGvA2Z-5y5pC-XqSto-Lz99GQ/exec";
+const SCRIPT_URL = "PEGA_AQUI_TU_URL_DE_APPS_SCRIPT";
 
 // ── State ─────────────────────────────────────────────────────
 let state = {
@@ -406,7 +422,8 @@ async function adminSearch() {
   const q = document.getElementById("admin-search").value.trim();
   if (!q) return;
   showLoading();
-  const res = await api("searchClient", { q, adminPassword: state.adminPass });
+  const adminPassword = state.adminPass === "__pin__" ? "" : state.adminPass;
+  const res = await api("searchClient", { q, adminPassword, pin: state.posPin || "" });
   hideLoading();
   if (!res.ok) { toast("❌ " + res.error); return; }
   const container = document.getElementById("admin-search-results");
@@ -445,7 +462,7 @@ async function adminAdjPoints() {
   const delta  = Number(document.getElementById("adm-pts-delta").value);
   if (!delta) { toast("Ingresa un valor"); return; }
   showLoading();
-  const res = await api("adminAdjPoints", { correo, delta, adminPassword: state.adminPass });
+  const res = await api("adminAdjPoints", { correo, delta, adminPassword: state.adminPass || "", pin: state.posPin || "" });
   hideLoading();
   if (!res.ok) { toast("❌ " + res.error); return; }
   toast(`✅ Puntos actualizados: ${res.puntosNuevos}`);
@@ -455,7 +472,7 @@ async function adminAdjPoints() {
 async function adminVerifyResena() {
   const correo = document.getElementById("admin-client-detail").dataset.correo;
   showLoading();
-  const res = await api("verifyResena", { correo, adminPassword: state.adminPass });
+  const res = await api("verifyResena", { correo, adminPassword: state.adminPass || "", pin: state.posPin || "" });
   hideLoading();
   if (!res.ok) { toast("❌ " + res.error); return; }
   toast("✅ Reseña verificada. Se envió correo al cliente.");
@@ -468,7 +485,7 @@ async function createFlash() {
   const duracion_horas = document.getElementById("flash-horas").value;
   if (!texto) { toast("Escribe el mensaje del flash"); return; }
   showLoading();
-  const res = await api("createFlash", { texto, nivel_minimo, duracion_horas, adminPassword: state.adminPass });
+  const res = await api("createFlash", { texto, nivel_minimo, duracion_horas, adminPassword: state.adminPass || "", pin: state.posPin || "" });
   hideLoading();
   if (!res.ok) { toast("❌ " + res.error); return; }
   toast("⚡ Flash activado!");
@@ -615,15 +632,54 @@ function posEliminarItem(idx) {
 }
 
 function posSiguienteCliente() {
-  document.getElementById("pos-correo-manual").value = "";
+  document.getElementById("pos-search-cliente").value = "";
+  document.getElementById("pos-search-results").innerHTML = "";
+  document.getElementById("pos-cliente-seleccionado").classList.add("hidden");
+  posState.clienteSeleccionado = null;
   posShowStep("cliente");
 }
 
-// ── PASO 3: Cliente ───────────────────────────────────────────
+// ── PASO 3: Cliente búsqueda dinámica ─────────────────────────
+let posSearchTimer = null;
+async function posBuscarCliente() {
+  const q = document.getElementById("pos-search-cliente").value.trim();
+  const resultsEl = document.getElementById("pos-search-results");
+  document.getElementById("pos-cliente-seleccionado").classList.add("hidden");
+  posState.clienteSeleccionado = null;
+
+  if (q.length < 2) { resultsEl.innerHTML = ""; return; }
+
+  clearTimeout(posSearchTimer);
+  posSearchTimer = setTimeout(async () => {
+    const res = await api("searchClientPOS", { q });
+    resultsEl.innerHTML = "";
+    if (!res.ok || !res.clientes.length) {
+      resultsEl.innerHTML = "<p style='color:var(--text-lt);font-size:.85rem;padding:.5rem 0'>Sin resultados</p>";
+      return;
+    }
+    res.clientes.forEach(c => {
+      const div = document.createElement("div");
+      div.className = "search-result-item";
+      div.innerHTML = `<p class='result-name'>${c.nombre || "(sin nombre)"}</p>
+        <p class='result-sub'>${c.correo} · ${c.nivel}</p>`;
+      div.onclick = () => posSeleccionarCliente(c);
+      resultsEl.appendChild(div);
+    });
+  }, 400);
+}
+
+function posSeleccionarCliente(c) {
+  posState.clienteSeleccionado = c;
+  document.getElementById("pos-search-results").innerHTML = "";
+  document.getElementById("pos-cliente-sel-nombre").textContent = c.nombre || c.correo.split("@")[0];
+  document.getElementById("pos-cliente-sel-correo").textContent = c.correo + " · " + c.nivel;
+  document.getElementById("pos-cliente-seleccionado").classList.remove("hidden");
+}
+
 async function posConfirmarConCliente() {
-  const correo = document.getElementById("pos-correo-manual").value.trim().toLowerCase();
-  if (!correo) { toast("Ingresa el correo o factura sin cliente"); return; }
-  await posRegistrarVenta(correo);
+  const c = posState.clienteSeleccionado;
+  if (!c) { toast("Selecciona un cliente de la lista"); return; }
+  await posRegistrarVenta(c.correo);
 }
 
 async function posConfirmarSinCliente() {
