@@ -654,12 +654,15 @@ async function posRegistrarVenta(correo) {
 
   document.getElementById("pos-ok-resumen").textContent = resumen;
   posShowStep("ok");
-  // Cargar resumen del día
+  // Esperar 1.5s para que el Sheet procese la venta
+  await new Promise(r => setTimeout(r, 1500));
   const sumRes = await api("getDaySummary", { adminPassword: state.adminPass || "", pin: state.posPin || "" });
   if (sumRes.ok) {
     document.getElementById("dia-ventas").textContent = sumRes.ventasHoy;
     document.getElementById("dia-total").textContent = "$" + (sumRes.totalHoy || 0).toLocaleString("es-CO");
     document.getElementById("dia-pts").textContent = sumRes.puntosEntregados;
+    const topEl = document.getElementById("dia-top");
+    if (topEl) topEl.textContent = sumRes.topProducto || "-";
   }
 }
 
