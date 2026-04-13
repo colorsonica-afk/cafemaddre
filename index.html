@@ -40,8 +40,7 @@
       </div>
       <div id="login-error" class="error-msg hidden"></div>
       <button id="btn-continuar" class="btn-primary" onclick="doIniciar()">Continuar →</button>
-      <button class="btn-link" onclick="showAdminLogin()">Soy del equipo →</button>
-      <a id="link-pos" href="#posmaddre" style="display:none"></a>
+
     </div>
   </div>
 </div>
@@ -414,15 +413,13 @@
 <div id="toast" class="toast hidden"></div>
 
 <script>
-// URL oculta: /cafemaddre/#posmaddre → va directo a caja
-window.addEventListener("hashchange", checkHash);
 function checkHash() {
   if (location.hash === "#posmaddre") {
-    document.getElementById("admin-pass-input").value = "";
-    showScreen("admin-login");
-    document.getElementById("admin-login-btn-pos").click();
+    setTimeout(() => { pinReset(); showScreen("pin"); }, 900);
   }
 }
+window.addEventListener("hashchange", checkHash);
+window.addEventListener("load", checkHash);
 </script>
 <script src="app.js"></script>
 </body>
