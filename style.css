@@ -719,3 +719,18 @@ html, body {
   padding: .85rem 1rem;
   margin: .5rem 0;
 }
+
+/* Tab switch button in topbar */
+.tab-switch-btn {
+  padding: .35rem .85rem;
+  background: var(--crema2);
+  border: 1.5px solid var(--border);
+  border-radius: 99px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: .8rem;
+  cursor: pointer;
+  color: var(--cafe);
+  transition: all .15s;
+  margin-left: auto;
+}
+.tab-switch-btn:hover { background: var(--cafe); color: var(--white); }

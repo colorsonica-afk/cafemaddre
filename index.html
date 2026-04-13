@@ -258,8 +258,9 @@
 <!-- ── ADMIN PANEL ─────────────────────────────────────────── -->
 <div id="screen-admin" class="screen">
   <div class="topbar">
-    <button class="back-btn" onclick="showScreen('admin-login')">← Salir</button>
+    <button class="back-btn" onclick="showScreen('pin');pinReset()">← Salir</button>
     <h2>Panel Admin</h2>
+    <button class="tab-switch-btn" onclick="showScreen('pos')">🦋 Caja</button>
   </div>
   <div class="scroll-wrap">
     <div class="card summary-card">
@@ -319,9 +320,9 @@
 <!-- ── POS ─────────────────────────────────────────────────── -->
 <div id="screen-pos" class="screen">
   <div class="topbar">
-    <button class="back-btn" onclick="posReset()">← Salir</button>
+    <button class="back-btn" onclick="showScreen('pin');pinReset()">← Salir</button>
     <h2>🦋 Caja</h2>
-    <button class="icon-btn" onclick="posReset()">✕</button>
+    <button class="tab-switch-btn" onclick="showScreen('admin')">⚙️ Admin</button>
   </div>
   <div class="scroll-wrap">
 
