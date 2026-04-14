@@ -267,9 +267,7 @@ function renderProfile(res) {
 
   // Puntos
   document.getElementById("prof-puntos").textContent  = puntos.acumulados;
-  document.getElementById("stat-total").textContent    = puntos.totalProductos;
-  document.getElementById("stat-rollitos").textContent = puntos.rollitosCanjeados;
-  document.getElementById("stat-nivel").textContent    = cliente.nivel;
+
 
   // Dots
   const dotsEl = document.getElementById("points-dots");
