@@ -6,7 +6,6 @@
 <title>🦋 Club Maddre</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -159,13 +158,6 @@
     <button id="btn-redeem-pts" class="btn-primary" onclick="redeemPoints()" disabled>
       Canjear rollito (10 pts)
     </button>
-  </div>
-
-  <!-- QR -->
-  <div class="card qr-card">
-    <p class="qr-label">Tu código en caja</p>
-    <div id="qr-container"></div>
-    <p id="prof-correo-qr" class="qr-num"></p>
   </div>
 
   <!-- ¿Vienes hoy? -->
@@ -446,8 +438,13 @@
         </select>
       </div>
       <div class="field">
-        <label>Duración (horas)</label>
-        <input id="flash-horas" type="number" value="4" min="1" max="72">
+        <label>Hora de activación</label>
+        <select id="flash-horas">
+          <option value="3pm">3pm → 4pm</option>
+          <option value="4pm">4pm → 5pm</option>
+          <option value="5pm">5pm → 6pm</option>
+          <option value="6pm">6pm → 7pm</option>
+        </select>
       </div>
       <button class="btn-primary" onclick="createFlash()">⚡ Activar flash</button>
     </div>

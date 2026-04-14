@@ -267,7 +267,9 @@ function renderProfile(res) {
 
   // Puntos
   document.getElementById("prof-puntos").textContent  = puntos.acumulados;
-
+  document.getElementById("stat-total").textContent    = puntos.totalProductos;
+  document.getElementById("stat-rollitos").textContent = puntos.rollitosCanjeados;
+  document.getElementById("stat-nivel").textContent    = cliente.nivel;
 
   // Dots
   const dotsEl = document.getElementById("points-dots");
@@ -279,17 +281,6 @@ function renderProfile(res) {
     dotsEl.appendChild(d);
   }
   document.getElementById("btn-redeem-pts").disabled = puntos.acumulados < 10;
-
-  // QR — usa correo como identificador
-  const qrEl = document.getElementById("qr-container");
-  qrEl.innerHTML = "";
-  new QRCode(qrEl, {
-    text: cliente.correo,
-    width: 180, height: 180,
-    colorDark: "#5C3D2E", colorLight: "#FAF6EF",
-    correctLevel: QRCode.CorrectLevel.M,
-  });
-  document.getElementById("prof-correo-qr").textContent = cliente.correo;
 
   // Promos
   renderPromos(promos, cliente);
@@ -697,12 +688,12 @@ async function enviarMasivo() {
 
 
 async function createFlash() {
-  const texto          = document.getElementById("flash-texto").value.trim();
-  const nivel_minimo   = document.getElementById("flash-nivel").value;
-  const duracion_horas = document.getElementById("flash-horas").value;
+  const texto        = document.getElementById("flash-texto").value.trim();
+  const nivel_minimo = document.getElementById("flash-nivel").value;
+  const hora_fin     = document.getElementById("flash-horas").value;
   if (!texto) { toast("Escribe el mensaje del flash"); return; }
   showLoading();
-  const res = await api("createFlash", { texto, nivel_minimo, duracion_horas, adminPassword: state.adminPass || "", pin: state.posPin || "" });
+  const res = await api("createFlash", { texto, nivel_minimo, hora_fin, adminPassword: state.adminPass || "", pin: state.posPin || "" });
   hideLoading();
   if (!res.ok) { toast("❌ " + res.error); return; }
   toast("⚡ Flash activado!");
