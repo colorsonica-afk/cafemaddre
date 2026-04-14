@@ -827,6 +827,19 @@ html, body {
 .red-icon { font-size: 1.15rem; }
 
 /* ── FOOTER ──────────────────────────────────────────────── */
+.footer-ubicacion {
+  display: block;
+  text-align: center;
+  font-size: .8rem;
+  color: var(--verde);
+  font-weight: 500;
+  text-decoration: none;
+  padding: .75rem 1rem .25rem;
+}
+.footer-ubicacion:hover { text-decoration: underline; }
+
+.accion-stars { font-size: .95rem; margin: .15rem 0; letter-spacing: 1px; }
+
 .footer-cafe {
   text-align: center;
   color: var(--text-lt);
