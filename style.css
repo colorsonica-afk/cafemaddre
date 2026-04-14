@@ -326,6 +326,31 @@ html, body {
   backdrop-filter: blur(4px);
 }
 
+/* ── HEADER PILLS ────────────────────────────────────────── */
+.header-pills {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  margin-top: .65rem;
+  flex-wrap: wrap;
+}
+.header-ubicacion-link {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  margin-top: .55rem;
+  font-size: .78rem;
+  color: rgba(255,255,255,.85);
+  text-decoration: none;
+  background: rgba(255,255,255,.12);
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 99px;
+  padding: .3rem .75rem;
+  backdrop-filter: blur(4px);
+  transition: background .2s;
+}
+.header-ubicacion-link:hover { background: rgba(255,255,255,.2); }
+
 /* ── HORARIO PILL ────────────────────────────────────────── */
 .horario-pill {
   display: inline-flex;
@@ -336,9 +361,28 @@ html, body {
   border-radius: 99px;
   padding: .3rem 1rem;
   font-size: .75rem;
-  margin-top: .65rem;
   color: rgba(255,255,255,.88);
   backdrop-filter: blur(4px);
+}
+
+.estado-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 99px;
+  padding: .3rem .85rem;
+  font-size: .72rem;
+  font-weight: 500;
+  backdrop-filter: blur(4px);
+}
+.estado-pill.abierto {
+  background: rgba(80,180,80,.25);
+  border: 1px solid rgba(120,220,120,.4);
+  color: #90EE90;
+}
+.estado-pill.cerrado {
+  background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.18);
+  color: rgba(255,255,255,.55);
 }
 
 /* ── FLASH BANNER ────────────────────────────────────────── */
@@ -708,6 +752,28 @@ html, body {
   border-color: var(--dorado);
 }
 
+/* ── UBICACIÓN ───────────────────────────────────────────── */
+.ubicacion-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  margin: .75rem 1rem;
+  text-decoration: none;
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+  transition: transform .15s, box-shadow .15s;
+}
+.ubicacion-card:active { transform: scale(.98); }
+.ubicacion-left { display: flex; align-items: center; gap: .85rem; }
+.ubicacion-icon { font-size: 1.8rem; }
+.ubicacion-title { font-weight: 500; font-size: .92rem; color: var(--text); }
+.ubicacion-desc  { font-size: .75rem; color: var(--text-lt); margin-top: .1rem; }
+.ubicacion-cta   { font-size: .82rem; color: var(--verde); font-weight: 600; }
+
 /* ── ACCIONES GRID ───────────────────────────────────────── */
 .accion-grid {
   display: grid;
@@ -729,7 +795,8 @@ html, body {
   transition: transform .15s, box-shadow .15s;
 }
 .accion-card:active { transform: scale(.97); box-shadow: var(--shadow-sm); }
-.accion-icon  { font-size: 1.6rem; margin-bottom: .1rem; }
+.accion-icon  { font-size: 1.6rem; margin-bottom: .4rem; display: flex; align-items: center; justify-content: center; }
+.accion-logo  { width: 52px; height: 52px; object-fit: contain; border-radius: 12px; }
 .accion-title { font-weight: 500; font-size: .85rem; color: var(--text); }
 .accion-desc  { font-size: .74rem; color: var(--text-lt); line-height: 1.45; }
 .accion-cta   { font-size: .74rem; color: var(--verde); font-weight: 500; margin-top: .3rem; }

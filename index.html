@@ -131,7 +131,13 @@
     </div>
     <h2 id="prof-nombre">Hola!</h2>
     <p id="prof-correo" class="prof-sub"></p>
-    <div class="horario-pill">📅 Miércoles a domingo · 3 – 7 pm</div>
+    <div class="header-pills">
+      <div class="horario-pill">📅 Mié – Dom · 3 – 7 pm</div>
+      <div id="estado-tienda" class="estado-pill cerrado">● Cerrado</div>
+    </div>
+    <a href="https://maps.app.goo.gl/uFEeEwi4WkpPh5Mc9" target="_blank" class="header-ubicacion-link">
+      📍 ¿Dónde estamos? Ver en Maps ↗
+    </a>
   </div>
 
   <!-- Flash -->
@@ -217,7 +223,7 @@
     <div class="promo-item">
       <div>
         <p class="promo-name">🎂 Rollito cumpleañero</p>
-        <p id="cumple-desc" class="promo-desc">Durante tu mes de cumpleaños</p>
+        <p id="cumple-desc" class="promo-desc">Solo el día de tu cumpleaños</p>
       </div>
       <button id="btn-cumple" class="promo-btn" onclick="redeemCumple()">Canjear</button>
     </div>
@@ -265,13 +271,13 @@
   <!-- Acciones -->
   <div class="accion-grid">
     <a href="https://maps.app.goo.gl/BtxwysjAvMXyJfsj9" target="_blank" class="accion-card">
-      <span class="accion-icon">📍</span>
+      <span class="accion-icon"><img src="maps.png" alt="Google Maps" class="accion-logo"></span>
       <p class="accion-title">Cuéntale al barrio</p>
       <p class="accion-desc">Tu reseña nos ayuda a que más vecinos nos encuentren</p>
       <span class="accion-cta">Calificarnos ↗</span>
     </a>
-    <a href="https://www.didi.com" target="_blank" class="accion-card">
-      <span class="accion-icon">🛵</span>
+    <a href="https://food.didiglobal.com/" target="_blank" class="accion-card">
+      <span class="accion-icon"><img src="didi.png" alt="Didi Food" class="accion-logo"></span>
       <p class="accion-title">¿Sin salir de casa?</p>
       <p class="accion-desc">Pedimos el rollito directito a tu puerta</p>
       <span class="accion-cta">Pedir domicilio ↗</span>
