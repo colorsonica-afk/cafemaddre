@@ -67,7 +67,7 @@ const POS_PIN_CLIENT = "__pin__"; // marcador interno
 //  Registro progresivo: correo → cédula → nombre/WA → cumple
 // ============================================================
 
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbylSrBu84KEaLl19Jny5YSt2iTgRdUfdVEfpseT_KMdjkGvA2Z-5y5pC-XqSto-Lz99GQ/exec";
+const SCRIPT_URL = "PEGA_AQUI_TU_URL_DE_APPS_SCRIPT";
 
 // ── State ─────────────────────────────────────────────────────
 let state = {
@@ -299,6 +299,17 @@ function renderProfile(res) {
   // Flash
   renderFlash(flash);
 
+  // Load extras
+  loadMusica();
+  if (state.profile?.config?.saboresRollito) {
+    initReservaSabores(state.profile.config.saboresRollito);
+  } else {
+    // Load sabores from config
+    api("getProducts").then(r => {
+      if (r.ok && r.saboresRollito) initReservaSabores(r.saboresRollito);
+    });
+  }
+
   // Completar perfil si faltan datos
   const nivelReg = Number(cliente.nivel_registro) || 1;
   const bannerEl = document.getElementById("perfil-incompleto-banner");
@@ -350,6 +361,129 @@ function renderFlash(flashArr) {
   state.flashTimerInterval = setInterval(tick, 1000);
 }
 
+
+// ── STATS CLIENTE ─────────────────────────────────────────────
+async function loadClienteStats(correo) {
+  const res = await api("getClienteStats", { correo });
+  if (!res.ok) return;
+  document.getElementById("stat-favorito").textContent = res.favorito || "—";
+  document.getElementById("stat-canciones").textContent = res.canciones || 0;
+}
+
+// ── RESERVA ───────────────────────────────────────────────────
+let reservaState = { qty: 1, sabor: null, tiempo: null };
+
+function reservaQty(delta) {
+  reservaState.qty = Math.max(1, reservaState.qty + delta);
+  document.getElementById("reserva-qty").textContent = reservaState.qty;
+}
+
+function initReservaSabores(sabores) {
+  const grid = document.getElementById("reserva-sabores-grid");
+  if (!grid) return;
+  grid.innerHTML = "";
+  sabores.forEach(s => {
+    const btn = document.createElement("button");
+    btn.className = "sabor-chip";
+    btn.textContent = s;
+    btn.onclick = () => {
+      document.querySelectorAll(".sabor-chip").forEach(b => b.classList.remove("sel"));
+      btn.classList.add("sel");
+      reservaState.sabor = s;
+    };
+    grid.appendChild(btn);
+  });
+}
+
+function selTiempo(btn, val) {
+  document.querySelectorAll(".t-btn").forEach(b => b.classList.remove("sel"));
+  btn.classList.add("sel");
+  reservaState.tiempo = val;
+}
+
+async function enviarReserva() {
+  const errEl = document.getElementById("reserva-error");
+  errEl.classList.add("hidden");
+  if (!reservaState.sabor) { errEl.textContent = "Elige un sabor"; errEl.classList.remove("hidden"); return; }
+  if (!reservaState.tiempo) { errEl.textContent = "¿En cuánto llegas?"; errEl.classList.remove("hidden"); return; }
+
+  showLoading();
+  const res = await api("crearReserva", {
+    correo: state.correo,
+    cantidad: reservaState.qty,
+    sabor: reservaState.sabor,
+    tiempo: reservaState.tiempo,
+  });
+  hideLoading();
+
+  if (!res.ok) { errEl.textContent = res.error; errEl.classList.remove("hidden"); return; }
+  toast("🦋 ¡Listo! Ya te guardamos los rollitos");
+  // Reset
+  reservaState = { qty: 1, sabor: null, tiempo: null };
+  document.getElementById("reserva-qty").textContent = 1;
+  document.querySelectorAll(".sabor-chip").forEach(b => b.classList.remove("sel"));
+  document.querySelectorAll(".t-btn").forEach(b => b.classList.remove("sel"));
+}
+
+// ── TALLER ────────────────────────────────────────────────────
+async function alertarTaller() {
+  showLoading();
+  const res = await api("alertaTaller", { correo: state.correo });
+  hideLoading();
+  toast(res.ok ? "🎨 ¡Listo! Te contactamos para confirmar tu cupo" : "❌ " + res.error);
+}
+
+// ── MÚSICA ────────────────────────────────────────────────────
+async function loadMusica() {
+  const res = await api("getMusica");
+  if (!res.ok) return;
+  renderMusicaWall(res.canciones);
+}
+
+function renderMusicaWall(canciones) {
+  const wall = document.getElementById("musica-wall");
+  if (!wall) return;
+  wall.innerHTML = "";
+  if (!canciones.length) {
+    wall.innerHTML = "<p style='color:var(--text-lt);font-size:.85rem;text-align:center;padding:.5rem'>Sé el primero en sugerir una canción hoy 🎵</p>";
+    return;
+  }
+  canciones.forEach(c => {
+    const div = document.createElement("div");
+    div.className = "musica-item";
+    div.innerHTML = `
+      <div>
+        <p class="musica-nombre">🎵 ${c.cancion}</p>
+        <p class="musica-quien">por ${c.nombre || c.correo.split("@")[0]}</p>
+      </div>
+      <button class="musica-votar" onclick="votarCancion('${c.id}')">
+        ♥ ${c.votos || 0}
+      </button>`;
+    wall.appendChild(div);
+  });
+}
+
+async function sugerirCancion() {
+  const input = document.getElementById("musica-input");
+  const cancion = input.value.trim();
+  if (!cancion) return;
+  showLoading();
+  const res = await api("crearSugerencia", { correo: state.correo, cancion });
+  hideLoading();
+  if (!res.ok) { toast("❌ " + res.error); return; }
+  input.value = "";
+  toast("🎵 ¡Sugerencia enviada!");
+  loadMusica();
+}
+
+async function votarCancion(id) {
+  showLoading();
+  const res = await api("votarCancion", { id, correo: state.correo });
+  hideLoading();
+  if (!res.ok) { toast("❌ " + res.error); return; }
+  loadMusica();
+}
+
 // ── REDENCIONES CLIENTE ───────────────────────────────────────
 async function redeemPoints() {
   showLoading();
@@ -396,88 +530,173 @@ async function adminAuthAndGo(destination) {
   const errEl = document.getElementById("admin-login-error");
   hideErr(errEl);
   if (!pass) { showErr(errEl, "Ingresa la contraseña"); return; }
-
   showLoading();
   const res = await api("getDaySummary", { adminPassword: pass });
   hideLoading();
   if (!res.ok) { showErr(errEl, "Contraseña incorrecta"); return; }
-
   state.adminPass = pass;
   if (destination === "admin") {
-    renderDaySummary(res);
     showScreen("admin");
+    await loadAdminSummary();
   } else {
     showScreen("pos");
     await initPOS();
   }
 }
 
-function renderDaySummary(res) {
-  document.getElementById("sum-ventas").textContent = res.ventasHoy      ?? "-";
-  document.getElementById("sum-nuevos").textContent = res.clientesNuevos ?? "-";
-  document.getElementById("sum-puntos").textContent = res.puntosEntregados ?? "-";
+// ── ADMIN TABS ────────────────────────────────────────────────
+function adminTab(btn, tab) {
+  document.querySelectorAll(".admin-tab").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  document.querySelectorAll(".admin-section").forEach(s => s.classList.add("hidden"));
+  document.getElementById("admin-tab-" + tab).classList.remove("hidden");
+  if (tab === "resumen") loadAdminSummary();
+  if (tab === "clientes") {
+    document.getElementById("admin-search").value = "";
+    document.getElementById("admin-search-results").innerHTML = "";
+    document.getElementById("admin-client-detail").classList.add("hidden");
+  }
 }
 
-async function adminSearch() {
-  const q = document.getElementById("admin-search").value.trim();
-  if (!q) return;
+async function loadAdminSummary() {
   showLoading();
-  const adminPassword = state.adminPass === "__pin__" ? "" : state.adminPass;
-  const res = await api("searchClient", { q, adminPassword, pin: state.posPin || "" });
+  const res = await api("getAdminSummary", { pin: state.posPin || "", adminPassword: state.adminPass || "" });
   hideLoading();
-  if (!res.ok) { toast("❌ " + res.error); return; }
+  if (!res.ok) return;
+
+  document.getElementById("adm-total-ventas").textContent = "$" + (res.totalVentas || 0).toLocaleString("es-CO");
+  document.getElementById("adm-transacciones").textContent = res.transacciones || 0;
+  document.getElementById("adm-vecinos").textContent = res.vecinos || 0;
+  document.getElementById("adm-rollitos").textContent = res.rollitosCanjeados || 0;
+  document.getElementById("adm-recipients-pill").textContent = `👥 ${res.vecinos || 0} vecinos recibirán este mensaje`;
+
+  // Status abierto/cerrado
+  const badge = document.getElementById("admin-status-badge");
+  if (res.abierto) {
+    badge.textContent = "● Abierto";
+    badge.className = "status-badge abierto";
+  } else {
+    badge.textContent = "● Cerrado";
+    badge.className = "status-badge cerrado";
+  }
+
+  // Top canciones
+  const list = document.getElementById("adm-canciones");
+  list.innerHTML = "";
+  if (!res.topCanciones || !res.topCanciones.length) {
+    list.innerHTML = "<p style='color:var(--text-lt);font-size:.85rem'>Nadie ha sugerido canciones hoy</p>";
+  } else {
+    res.topCanciones.forEach((c, i) => {
+      const div = document.createElement("div");
+      div.className = "song-row";
+      const rank = i === 0 ? '<span class="song-rank gold">♛</span>' : `<span class="song-rank">${i+1}</span>`;
+      div.innerHTML = `${rank}
+        <div class="song-info">
+          <p class="song-name">${c.cancion}</p>
+          <p class="song-sub">sugerida por ${c.nombre || c.correo?.split("@")[0] || "—"}</p>
+        </div>
+        <span class="song-likes">♥ ${c.votos || 0}</span>`;
+      list.appendChild(div);
+    });
+  }
+}
+
+// ── BUSCAR CLIENTE ADMIN ──────────────────────────────────────
+let adminSearchTimer2 = null;
+async function adminSearchDynamic() {
+  const q = document.getElementById("admin-search").value.trim();
   const container = document.getElementById("admin-search-results");
-  container.innerHTML = "";
-  if (!res.clientes.length) { container.innerHTML = "<p style='color:var(--text-lt);font-size:.85rem'>Sin resultados</p>"; return; }
-  res.clientes.forEach(c => {
-    const div = document.createElement("div");
-    div.className = "search-result-item";
-    div.innerHTML = `<p class='result-name'>${c.nombre || "(sin nombre)"}</p>
-      <p class='result-sub'>${c.correo} · ${c.nivel} · Reseña: ${c.resena_maps ? "✅" : "❌"}</p>`;
-    div.onclick = () => loadAdminClientDetail(c.correo);
-    container.appendChild(div);
-  });
+  document.getElementById("admin-client-detail").classList.add("hidden");
+  if (q.length < 2) { container.innerHTML = ""; return; }
+  clearTimeout(adminSearchTimer2);
+  adminSearchTimer2 = setTimeout(async () => {
+    const res = await api("searchClient", { q, adminPassword: state.adminPass || "", pin: state.posPin || "" });
+    container.innerHTML = "";
+    if (!res.ok || !res.clientes.length) {
+      container.innerHTML = "<p style='color:var(--text-lt);font-size:.85rem;padding:.5rem 0'>No encontramos ese vecino 🦋</p>";
+      return;
+    }
+    res.clientes.forEach(c => {
+      const div = document.createElement("div");
+      div.className = "search-result-item";
+      div.innerHTML = `<p class='result-name'>${c.nombre || "(sin nombre)"}</p>
+        <p class='result-sub'>${c.correo} · ${c.nivel}</p>`;
+      div.onclick = () => loadAdminClientDetail(c.correo);
+      container.appendChild(div);
+    });
+  }, 400);
 }
 
 async function loadAdminClientDetail(correo) {
   showLoading();
-  const res = await api("getProfile", { correo });
+  const res = await api("getClienteHistorial", { correo, pin: state.posPin || "", adminPassword: state.adminPass || "" });
   hideLoading();
-  if (!res.ok) { toast("Error"); return; }
-  const { cliente, puntos } = res;
+  if (!res.ok) { toast("❌ " + res.error); return; }
+
+  document.getElementById("admin-search-results").innerHTML = "";
   document.getElementById("admin-client-detail").classList.remove("hidden");
-  document.getElementById("adm-client-name").textContent = cliente.nombre || correo;
-  document.getElementById("adm-client-info").textContent =
-    `${cliente.correo} · ${cliente.nivel} · Reseña: ${cliente.resena_maps ? "✅" : "❌"}`;
-  document.getElementById("adm-client-pts").textContent = puntos.acumulados + " pts";
-  document.getElementById("admin-client-detail").dataset.correo = correo;
-  document.getElementById("btn-verify-resena").disabled = cliente.resena_maps === true;
-  document.getElementById("btn-verify-resena").textContent =
-    cliente.resena_maps ? "✅ Reseña ya verificada" : "✅ Verificar reseña Google Maps";
+
+  const inicial = (res.cliente.nombre || correo)[0].toUpperCase();
+  document.getElementById("adm-avatar").textContent = inicial;
+  document.getElementById("adm-client-name").textContent = res.cliente.nombre || "(sin nombre)";
+  document.getElementById("adm-client-info").textContent = res.cliente.correo + " · " + res.cliente.nivel;
+  document.getElementById("adm-client-pts").textContent = res.puntos;
+
+  // Compras
+  const comprasEl = document.getElementById("adm-compras");
+  comprasEl.innerHTML = "";
+  if (!res.compras.length) {
+    comprasEl.innerHTML = "<p style='color:var(--text-lt);font-size:.85rem'>Sin compras registradas</p>";
+  } else {
+    res.compras.forEach(c => {
+      const div = document.createElement("div");
+      div.className = "compra-item";
+      div.innerHTML = `<p class='compra-fecha'>${c.fecha} · ${c.sector || ""}</p>
+        <p class='compra-productos'>${c.productos}</p>
+        <p class='compra-total'>$${(c.total||0).toLocaleString("es-CO")}</p>`;
+      comprasEl.appendChild(div);
+    });
+  }
+
+  // Promos
+  const promosEl = document.getElementById("adm-promos-list");
+  promosEl.innerHTML = "";
+  if (!res.promosCanjeadas.length) {
+    promosEl.innerHTML = "<p style='color:var(--text-lt);font-size:.85rem'>Sin promos canjeadas</p>";
+  } else {
+    res.promosCanjeadas.forEach(p => {
+      const div = document.createElement("div");
+      div.className = "promo-hist-item";
+      div.textContent = p;
+      promosEl.appendChild(div);
+    });
+  }
+
   document.getElementById("admin-client-detail").scrollIntoView({ behavior: "smooth" });
 }
 
-async function adminAdjPoints() {
-  const correo = document.getElementById("admin-client-detail").dataset.correo;
-  const delta  = Number(document.getElementById("adm-pts-delta").value);
-  if (!delta) { toast("Ingresa un valor"); return; }
-  showLoading();
-  const res = await api("adminAdjPoints", { correo, delta, adminPassword: state.adminPass || "", pin: state.posPin || "" });
-  hideLoading();
-  if (!res.ok) { toast("❌ " + res.error); return; }
-  toast(`✅ Puntos actualizados: ${res.puntosNuevos}`);
-  loadAdminClientDetail(correo);
+// ── ENVÍO MASIVO ──────────────────────────────────────────────
+function updateEmailPreview() {
+  const msg = document.getElementById("masivo-mensaje").value;
+  document.getElementById("email-preview-body").textContent = msg || "Tu mensaje aparecerá aquí...";
 }
 
-async function adminVerifyResena() {
-  const correo = document.getElementById("admin-client-detail").dataset.correo;
+async function enviarMasivo() {
+  const asunto  = document.getElementById("masivo-asunto").value.trim();
+  const mensaje = document.getElementById("masivo-mensaje").value.trim();
+  if (!asunto || !mensaje) { toast("Completa asunto y mensaje"); return; }
+  if (!confirm(`¿Enviar este correo a todos los vecinos?`)) return;
   showLoading();
-  const res = await api("verifyResena", { correo, adminPassword: state.adminPass || "", pin: state.posPin || "" });
+  const res = await api("enviarMasivo", { asunto, mensaje, pin: state.posPin || "", adminPassword: state.adminPass || "" });
   hideLoading();
   if (!res.ok) { toast("❌ " + res.error); return; }
-  toast("✅ Reseña verificada. Se envió correo al cliente.");
-  loadAdminClientDetail(correo);
+  toast(`✅ Correo enviado a ${res.enviados} vecinos`);
+  document.getElementById("masivo-asunto").value = "";
+  document.getElementById("masivo-mensaje").value = "";
+  document.getElementById("email-preview-body").textContent = "Tu mensaje aparecerá aquí...";
 }
+
+
 
 async function createFlash() {
   const texto          = document.getElementById("flash-texto").value.trim();

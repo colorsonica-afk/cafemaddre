@@ -123,6 +123,7 @@
     <button id="btn-completar-perfil" class="btn-primary" style="margin-top:.75rem">Continuar registro →</button>
   </div>
 
+  <!-- Header -->
   <div class="profile-header">
     <div class="profile-top">
       <button class="icon-btn" onclick="logout()">↩</button>
@@ -131,6 +132,7 @@
     </div>
     <h2 id="prof-nombre">Hola!</h2>
     <p id="prof-correo" class="prof-sub"></p>
+    <div class="horario-pill">📅 Miércoles a domingo · 3 – 7 pm</div>
   </div>
 
   <!-- Flash -->
@@ -166,9 +168,53 @@
     <p id="prof-correo-qr" class="qr-num"></p>
   </div>
 
+  <!-- ¿Vienes hoy? -->
+  <div class="card reserva-card">
+    <p class="sec-title">¿Vienes hoy? 🦋</p>
+    <p class="sec-sub">Avísanos y te guardamos el tuyo</p>
+    <div class="rollito-qty-row">
+      <div>
+        <p class="rollito-qty-label">Rollitos de canela</p>
+        <p class="rollito-qty-sub">$5.500 c/u</p>
+      </div>
+      <div class="qty-ctrl">
+        <button class="qty-btn" onclick="reservaQty(-1)">−</button>
+        <span id="reserva-qty" class="qty-num">1</span>
+        <button class="qty-btn" onclick="reservaQty(1)">+</button>
+      </div>
+    </div>
+    <div id="reserva-sabores-wrap" class="sabores-wrap">
+      <p class="sabores-label">¿De cuál te los preparamos?</p>
+      <div id="reserva-sabores-grid" class="sabores-grid"></div>
+    </div>
+    <div class="tiempo-wrap">
+      <p class="tiempo-label">Llego en...</p>
+      <div class="tiempo-grid">
+        <button class="t-btn" onclick="selTiempo(this,'15 min')"><span class="t-num">15</span><span class="t-unit">min</span></button>
+        <button class="t-btn" onclick="selTiempo(this,'30 min')"><span class="t-num">30</span><span class="t-unit">min</span></button>
+        <button class="t-btn" onclick="selTiempo(this,'45 min')"><span class="t-num">45</span><span class="t-unit">min</span></button>
+        <button class="t-btn" onclick="selTiempo(this,'1 hora')"><span class="t-num">1</span><span class="t-unit">hora</span></button>
+      </div>
+    </div>
+    <div id="reserva-error" class="error-msg hidden"></div>
+    <button class="btn-primary" onclick="enviarReserva()">🦋 Guárdamelos, ya voy</button>
+  </div>
+
+  <!-- Galería sabores -->
+  <div class="galeria-section">
+    <p class="sec-title" style="padding:1rem 1.25rem .5rem">Así se ven 😍</p>
+    <div class="galeria-grid">
+      <div class="g-item"><img src="img-frutosrojos.jpg" alt="Frutos Rojos"><span class="g-tag">Frutos Rojos</span></div>
+      <div class="g-item"><img src="img-pistacho.png" alt="Pistacho"><span class="g-tag">Pistacho</span></div>
+      <div class="g-item"><img src="img-maracuya.png" alt="Maracuyá"><span class="g-tag">Maracuyá</span></div>
+      <div class="g-item"><img src="img-oreo.png" alt="Oreo"><span class="g-tag">Oreo</span></div>
+      <div class="g-item"><img src="img-almendras.png" alt="Almendras"><span class="g-tag">Almendras</span></div>
+    </div>
+  </div>
+
   <!-- Promos -->
   <div class="card promos-card">
-    <h3>Tus promos</h3>
+    <h3>Tus promos 🎁</h3>
     <div class="promo-item">
       <div>
         <p class="promo-name">📦 Caja semanal</p>
@@ -188,18 +234,66 @@
   <!-- Stats -->
   <div class="stats-row">
     <div class="stat-box">
-      <p id="stat-total" class="stat-num">0</p>
-      <p class="stat-label">productos</p>
+      <p id="stat-puntos" class="stat-num">0</p>
+      <p class="stat-label">puntos</p>
     </div>
     <div class="stat-box">
-      <p id="stat-rollitos" class="stat-num">0</p>
-      <p class="stat-label">rollitos ganados</p>
+      <p id="stat-favorito" class="stat-num" style="font-size:.9rem">—</p>
+      <p class="stat-label">favorito</p>
     </div>
     <div class="stat-box">
-      <p class="stat-num">☕</p>
-      <p id="stat-nivel" class="stat-label">Vecino</p>
+      <p id="stat-canciones" class="stat-num">0</p>
+      <p class="stat-label">canciones</p>
     </div>
   </div>
+
+  <!-- Taller -->
+  <div class="card taller-card">
+    <div class="taller-content">
+      <div>
+        <p class="taller-title">🎨 Taller de cerámica</p>
+        <p class="taller-desc">Pinta, crea y disfruta con tu rollito + tinto incluido</p>
+        <p class="taller-price">$20.000</p>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="alertarTaller()">Apartar mi cupo</button>
+  </div>
+
+  <!-- Música -->
+  <div class="card musica-card">
+    <p class="sec-title">¿Qué suena hoy? 🎶</p>
+    <p class="sec-sub">Sugiere una canción y que los vecinos decidan</p>
+    <div class="musica-input-row">
+      <input id="musica-input" type="text" placeholder="Artista · Canción" class="musica-input">
+      <button class="musica-btn" onclick="sugerirCancion()">→</button>
+    </div>
+    <div id="musica-wall" class="musica-wall"></div>
+  </div>
+
+  <!-- Acciones -->
+  <div class="accion-grid">
+    <a href="https://maps.app.goo.gl/BtxwysjAvMXyJfsj9" target="_blank" class="accion-card">
+      <span class="accion-icon">📍</span>
+      <p class="accion-title">Cuéntale al barrio</p>
+      <p class="accion-desc">Tu reseña nos ayuda a que más vecinos nos encuentren</p>
+      <span class="accion-cta">Calificarnos ↗</span>
+    </a>
+    <a href="https://www.didi.com" target="_blank" class="accion-card">
+      <span class="accion-icon">🛵</span>
+      <p class="accion-title">¿Sin salir de casa?</p>
+      <p class="accion-desc">Pedimos el rollito directito a tu puerta</p>
+      <span class="accion-cta">Pedir domicilio ↗</span>
+    </a>
+  </div>
+
+  <!-- Redes -->
+  <div class="redes-row">
+    <a href="https://instagram.com" target="_blank" class="red-btn"><span class="red-icon">📸</span><span class="red-label">Instagram</span></a>
+    <a href="https://tiktok.com" target="_blank" class="red-btn"><span class="red-icon">🎵</span><span class="red-label">TikTok</span></a>
+    <a href="https://wa.me/57" target="_blank" class="red-btn"><span class="red-icon">💬</span><span class="red-label">WhatsApp</span></a>
+  </div>
+
+  <div class="footer-cafe">🦋 Café Maddre · Hecho con amor<br>Miércoles a domingo · 3 pm a 7 pm</div>
   <div style="height:2rem"></div>
 </div>
 
@@ -257,46 +351,89 @@
 
 <!-- ── ADMIN PANEL ─────────────────────────────────────────── -->
 <div id="screen-admin" class="screen">
-  <div class="topbar">
-    <button class="back-btn" onclick="showScreen('pin');pinReset()">← Salir</button>
-    <h2>Panel Admin</h2>
-    <button class="tab-switch-btn" onclick="showScreen('pos')">🦋 Caja</button>
+  <div class="admin-topbar">
+    <div class="admin-topbar-left">
+      <span class="admin-logo">🦋 maddre</span>
+      <span class="admin-chip">Admin</span>
+    </div>
+    <div class="admin-topbar-right">
+      <div id="admin-status-badge" class="status-badge cerrado">● Cerrado</div>
+      <button class="tab-switch-btn" onclick="showScreen('pos')">🦋 Caja</button>
+      <button class="back-btn" onclick="showScreen('pin');pinReset()">Salir</button>
+    </div>
   </div>
-  <div class="scroll-wrap">
-    <div class="card summary-card">
-      <h3>Resumen de hoy</h3>
-      <div class="summary-grid">
-        <div><p id="sum-ventas" class="sum-num">-</p><p>ventas</p></div>
-        <div><p id="sum-nuevos" class="sum-num">-</p><p>nuevos</p></div>
-        <div><p id="sum-puntos" class="sum-num">-</p><p>puntos</p></div>
+
+  <!-- Nav tabs -->
+  <div class="admin-nav">
+    <button class="admin-tab active" onclick="adminTab(this,'resumen')">📊 Resumen</button>
+    <button class="admin-tab" onclick="adminTab(this,'clientes')">🔍 Clientes</button>
+    <button class="admin-tab" onclick="adminTab(this,'promos')">🎁 Promos</button>
+    <button class="admin-tab" onclick="adminTab(this,'masivo')">📨 Correos</button>
+  </div>
+
+  <!-- ── TAB RESUMEN ── -->
+  <div id="admin-tab-resumen" class="admin-section">
+    <div class="admin-stats-grid">
+      <div class="admin-stat highlight">
+        <span class="as-icon">💰</span>
+        <p id="adm-total-ventas" class="as-num">—</p>
+        <p class="as-lbl">ventas históricas</p>
+      </div>
+      <div class="admin-stat">
+        <span class="as-icon">🧾</span>
+        <p id="adm-transacciones" class="as-num">—</p>
+        <p class="as-lbl">transacciones</p>
+      </div>
+      <div class="admin-stat">
+        <span class="as-icon">🌿</span>
+        <p id="adm-vecinos" class="as-num">—</p>
+        <p class="as-lbl">vecinos registrados</p>
+      </div>
+      <div class="admin-stat">
+        <span class="as-icon">🦋</span>
+        <p id="adm-rollitos" class="as-num">—</p>
+        <p class="as-lbl">rollitos canjeados</p>
       </div>
     </div>
+    <div class="card" style="margin:1rem">
+      <p class="card-title">🎵 Top canciones de hoy</p>
+      <div id="adm-canciones" class="canciones-list"></div>
+    </div>
+  </div>
 
-    <div class="card">
-      <h3>Buscar cliente</h3>
-      <div class="field">
-        <input id="admin-search" type="text" placeholder="Correo, cédula o nombre…">
+  <!-- ── TAB CLIENTES ── -->
+  <div id="admin-tab-clientes" class="admin-section hidden">
+    <div class="card" style="margin:1rem">
+      <div class="admin-search-wrap">
+        <span class="search-icon-adm">🔍</span>
+        <input id="admin-search" type="text" placeholder="Nombre o correo del vecino…" oninput="adminSearchDynamic()">
       </div>
-      <button class="btn-primary" onclick="adminSearch()">Buscar</button>
       <div id="admin-search-results" class="search-results"></div>
     </div>
-
-    <div id="admin-client-detail" class="card hidden">
-      <h3 id="adm-client-name">—</h3>
-      <p id="adm-client-info" class="prof-sub"></p>
-      <p id="adm-client-pts" class="points-big" style="font-size:2rem"></p>
-      <div class="field">
-        <label>Ajuste de puntos <span class="hint">(− para descontar)</span></label>
-        <input id="adm-pts-delta" type="number" placeholder="ej: 3 o -2">
+    <div id="admin-client-detail" class="card hidden" style="margin:0 1rem 1rem">
+      <div class="client-header-adm">
+        <div id="adm-avatar" class="c-avatar"></div>
+        <div style="flex:1">
+          <p id="adm-client-name" class="c-name">—</p>
+          <p id="adm-client-info" class="c-email"></p>
+        </div>
+        <div class="c-pts-wrap">
+          <p id="adm-client-pts" class="pts-num">0</p>
+          <p class="pts-lbl">puntos</p>
+        </div>
       </div>
-      <button class="btn-primary" onclick="adminAdjPoints()">Guardar ajuste</button>
-      <button id="btn-verify-resena" class="btn-ghost" onclick="adminVerifyResena()">
-        ✅ Verificar reseña Google Maps
-      </button>
+      <div class="divider-line"></div>
+      <p class="mini-title">Historial de compras</p>
+      <div id="adm-compras" class="compras-list"></div>
+      <p class="mini-title" style="margin-top:.75rem">Promos canjeadas</p>
+      <div id="adm-promos-list" class="promos-hist-list"></div>
     </div>
+  </div>
 
-    <div class="card">
-      <h3>⚡ Crear regalo flash</h3>
+  <!-- ── TAB PROMOS ── -->
+  <div id="admin-tab-promos" class="admin-section hidden">
+    <div class="card" style="margin:1rem">
+      <p class="card-title">⚡ Crear flash</p>
       <div class="field">
         <input id="flash-texto" type="text" placeholder="Ej: Hoy hasta las 6pm: aromática gratis">
       </div>
@@ -314,7 +451,56 @@
       </div>
       <button class="btn-primary" onclick="createFlash()">⚡ Activar flash</button>
     </div>
+    <div class="card" style="margin:0 1rem 1rem">
+      <p class="card-title">📋 Promos activas</p>
+      <div class="promo-admin-row">
+        <span class="promo-dot">📦</span>
+        <div class="promo-admin-info">
+          <p class="promo-admin-name">Caja semanal</p>
+          <p class="promo-admin-desc">4 rollitos por $20.000</p>
+        </div>
+        <span class="promo-status activa">Activa</span>
+      </div>
+      <div class="promo-admin-row">
+        <span class="promo-dot">🎂</span>
+        <div class="promo-admin-info">
+          <p class="promo-admin-name">Rollito cumpleañero</p>
+          <p class="promo-admin-desc">Rollito gratis el día de cumpleaños</p>
+        </div>
+        <span class="promo-status activa">Activa</span>
+      </div>
+    </div>
   </div>
+
+  <!-- ── TAB MASIVO ── -->
+  <div id="admin-tab-masivo" class="admin-section hidden">
+    <div class="card" style="margin:1rem">
+      <p class="card-title">📨 Mensaje a todos los vecinos</p>
+      <div id="adm-recipients-pill" class="recipients-pill">👥 — vecinos recibirán este mensaje</div>
+      <div class="field" style="margin-top:1rem">
+        <label>Asunto</label>
+        <input id="masivo-asunto" type="text" placeholder="Ej: ¡Hoy tenemos pistacho! 🦋">
+      </div>
+      <div class="field">
+        <label>Mensaje</label>
+        <textarea id="masivo-mensaje" placeholder="Escribe tu mensaje aquí..." rows="5" style="width:100%;padding:.75rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:.95rem;background:var(--crema);resize:vertical;outline:none" oninput="updateEmailPreview()"></textarea>
+      </div>
+      <p class="mini-title" style="margin-bottom:.5rem">Vista previa</p>
+      <div class="preview-email">
+        <div class="email-header-preview">
+          <div class="eh-logo">🦋</div>
+          <div class="eh-name">maddre</div>
+          <div class="eh-sub">Un mensaje para ti, vecino 🦋</div>
+        </div>
+        <div id="email-preview-body" class="email-body-preview">Tu mensaje aparecerá aquí...</div>
+        <div class="email-footer-preview">
+          Café Maddre · Miércoles a Domingo · 3 pm – 7 pm<br>Hecho con amor 🦋
+        </div>
+      </div>
+      <button class="btn-primary" onclick="enviarMasivo()" style="margin-top:1rem">📨 Enviar a todos los vecinos</button>
+    </div>
+  </div>
+
 </div>
 
 <!-- ── POS ─────────────────────────────────────────────────── -->
