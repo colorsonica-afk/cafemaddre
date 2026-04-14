@@ -50,13 +50,9 @@ async function pinIrA(destino) {
     showScreen("pos");
     await initPOS();
   } else {
-    // Panel admin — usar PIN como autenticación
     state.adminPass = POS_PIN_CLIENT;
-    showLoading();
-    const res = await api("getDaySummary", { pin: state.posPin });
-    hideLoading();
-    if (res.ok) renderDaySummary(res);
     showScreen("admin");
+    await loadAdminSummary();
   }
 }
 
@@ -68,6 +64,46 @@ const POS_PIN_CLIENT = "__pin__"; // marcador interno
 // ============================================================
 
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbylSrBu84KEaLl19Jny5YSt2iTgRdUfdVEfpseT_KMdjkGvA2Z-5y5pC-XqSto-Lz99GQ/exec";
+
+// ── Frases del día (editar aquí o conectar a Sheets más adelante) ──
+const FRASES_DIA = [
+  "Hoy también mereces algo rico ☕",
+  "Los mejores momentos huelen a canela 🌿",
+  "Gracias por ser parte del barrio 🦋",
+  "Un pequeño placer hace grande el día",
+  "Los vecinos hacen el barrio más bonito",
+  "Cada rollito es hecho con cariño para ti",
+  "Hay historias que solo se cuentan con café",
+  "El barrio es más dulce contigo en él",
+  "Lo casero siempre sabe diferente",
+  "Hoy también hay un lugar cálido para ti",
+  "Los buenos planes empiezan con un tinto ☕",
+  "Cocinar con amor se nota en cada mordisco",
+  "El café siempre tiene algo que contar 🦋",
+  "Un poco de dulce y mucho barrio 🌿",
+  "La tarde siempre mejora con algo dulce",
+  "Cada visita es nuestra favorita del día",
+  "Los mejores días tienen sabor a casa",
+  "Hoy también te esperamos con algo rico 🦋",
+  "La canela lo hace todo mejor",
+  "Cada vecino hace este lugar más especial",
+  "Un rollito puede cambiar el rumbo de la tarde",
+  "Los rollitos, como tú, son únicos",
+  "El barrio nos une, el café nos reúne ☕",
+  "Hoy también hay canela para ti",
+  "Gracias por cuidar el barrio con tu presencia",
+  "Los momentos bonitos siempre huelen rico 🌿",
+  "Hay días que solo piden algo dulce",
+  "Hoy es un buen día para un rollito 🦋",
+  "Cada mordisco tiene historia detrás",
+  "Aquí siempre hay algo hecho con amor ☕",
+];
+
+function getFraseDelDia() {
+  const inicio = new Date(new Date().getFullYear(), 0, 0);
+  const diaDelAnio = Math.floor((new Date() - inicio) / 86400000);
+  return FRASES_DIA[diaDelAnio % FRASES_DIA.length];
+}
 
 // ── State ─────────────────────────────────────────────────────
 let state = {
@@ -259,7 +295,7 @@ function renderProfile(res) {
 
   const nombreDisplay = cliente.nombre ? cliente.nombre.split(" ")[0] : cliente.correo.split("@")[0];
   document.getElementById("prof-nombre").textContent = "Hola, " + nombreDisplay;
-  document.getElementById("prof-correo").textContent = cliente.correo;
+  document.getElementById("prof-correo").textContent = res.fraseDelDia || getFraseDelDia();
 
   const nivelEmoji = { "Vecino": "🌿", "Habitual": "☕", "De la casa": "🥐" };
   const badge = document.getElementById("prof-nivel-badge");
@@ -284,6 +320,14 @@ function renderProfile(res) {
 
   // Promos
   renderPromos(promos, cliente);
+
+  // Estado tienda (abierto/cerrado)
+  const estadoEl = document.getElementById("estado-tienda");
+  if (estadoEl) {
+    const abierto = calcularEstadoTienda();
+    estadoEl.textContent = abierto ? "● Abierto" : "● Cerrado";
+    estadoEl.className   = "estado-pill " + (abierto ? "abierto" : "cerrado");
+  }
 
   // Flash
   renderFlash(flash);
@@ -322,14 +366,25 @@ function renderPromos(promos, cliente) {
   const cumpleDesc = document.getElementById("cumple-desc");
   if (promos.cumpleDisponible) {
     btnCumple.disabled = false;
-    cumpleDesc.textContent = "🎂 ¡Es tu mes! Rollito gratis";
-  } else if (!promos.esMesCumple && promos.mesesParaCumple !== null && promos.mesesParaCumple > 0) {
+    cumpleDesc.textContent = "🎂 ¡Feliz cumpleaños! Rollito gratis hoy";
+  } else if (promos.esDiaCumple === false && promos.esMesCumple) {
     btnCumple.disabled = true;
-    cumpleDesc.textContent = `Tu mes llega en ${promos.mesesParaCumple} mes(es)`;
+    cumpleDesc.textContent = "Solo disponible el día exacto de tu cumpleaños";
+  } else if (promos.mesesParaCumple !== null && promos.mesesParaCumple > 0) {
+    btnCumple.disabled = true;
+    cumpleDesc.textContent = `Tu cumpleaños llega en ${promos.mesesParaCumple} mes(es)`;
   } else {
     btnCumple.disabled = true;
-    cumpleDesc.textContent = "Durante tu mes de cumpleaños";
+    cumpleDesc.textContent = "Solo el día de tu cumpleaños";
   }
+}
+
+function calcularEstadoTienda() {
+  const ahora = new Date();
+  const dia   = ahora.getDay(); // 0=dom,1=lun,2=mar,3=mie,4=jue,5=vie,6=sab
+  const hora  = ahora.getHours() + ahora.getMinutes() / 60;
+  const diasAbiertos = [0, 3, 4, 5, 6]; // dom, mié, jue, vie, sáb
+  return diasAbiertos.includes(dia) && hora >= 15 && hora < 19;
 }
 
 function renderFlash(flashArr) {
@@ -434,10 +489,12 @@ function renderMusicaWall(canciones) {
   if (!wall) return;
   wall.innerHTML = "";
   if (!canciones.length) {
-    wall.innerHTML = "<p style='color:var(--text-lt);font-size:.85rem;text-align:center;padding:.5rem'>Sé el primero en sugerir una canción hoy 🎵</p>";
+    wall.innerHTML = "<p style='color:rgba(255,255,255,.4);font-size:.85rem;text-align:center;padding:.5rem'>Sé el primero en sugerir una canción hoy 🎵</p>";
     return;
   }
-  canciones.forEach(c => {
+  const MAX = 8;
+  const visibles = canciones.slice(0, MAX);
+  visibles.forEach(c => {
     const div = document.createElement("div");
     div.className = "musica-item";
     div.innerHTML = `
@@ -450,6 +507,12 @@ function renderMusicaWall(canciones) {
       </button>`;
     wall.appendChild(div);
   });
+  if (canciones.length > MAX) {
+    const more = document.createElement("p");
+    more.style.cssText = "color:rgba(255,255,255,.35);font-size:.78rem;text-align:center;padding:.5rem 0";
+    more.textContent = `+ ${canciones.length - MAX} canciones más hoy`;
+    wall.appendChild(more);
+  }
 }
 
 async function sugerirCancion() {
