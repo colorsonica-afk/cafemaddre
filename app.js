@@ -266,10 +266,10 @@ function renderProfile(res) {
   badge.textContent = (nivelEmoji[cliente.nivel] || "") + " " + cliente.nivel;
 
   // Puntos
-  document.getElementById("prof-puntos").textContent  = puntos.acumulados;
-  document.getElementById("stat-total").textContent    = puntos.totalProductos;
-  document.getElementById("stat-rollitos").textContent = puntos.rollitosCanjeados;
-  document.getElementById("stat-nivel").textContent    = cliente.nivel;
+  document.getElementById("prof-puntos").textContent = puntos.acumulados;
+  const elTotal    = document.getElementById("stat-total");    if (elTotal)    elTotal.textContent    = puntos.totalProductos;
+  const elRollitos = document.getElementById("stat-rollitos"); if (elRollitos) elRollitos.textContent = puntos.rollitosCanjeados;
+  const elNivel    = document.getElementById("stat-nivel");    if (elNivel)    elNivel.textContent    = cliente.nivel;
 
   // Dots
   const dotsEl = document.getElementById("points-dots");
