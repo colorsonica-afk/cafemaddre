@@ -297,7 +297,7 @@ function renderProfile(res) {
   document.getElementById("prof-nombre").textContent = "Hola, " + nombreDisplay;
   document.getElementById("prof-correo").textContent = res.fraseDelDia || getFraseDelDia();
 
-  const nivelEmoji = { "Vecino": "🌿", "Habitual": "☕", "De la casa": "🥐" };
+  const nivelEmoji = { "Vecino": "🌿", "Habitual": "☕", "De la casa": "🌀" };
   const badge = document.getElementById("prof-nivel-badge");
   badge.textContent = (nivelEmoji[cliente.nivel] || "") + " " + cliente.nivel;
 
@@ -467,6 +467,19 @@ async function enviarReserva() {
   document.getElementById("reserva-qty").textContent = 1;
   document.querySelectorAll(".sabor-chip").forEach(b => b.classList.remove("sel"));
   document.querySelectorAll(".t-btn").forEach(b => b.classList.remove("sel"));
+}
+
+// ── COMPARTIR APP ─────────────────────────────────────────────
+function compartirApp() {
+  const url  = "https://is.gd/clubmaddre";
+  const text = "¡Mira el club de Café Maddre! Acumula puntos, pide domicilio y más 🦋";
+  if (navigator.share) {
+    navigator.share({ title: "Club Maddre 🦋", text, url }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(url)
+      .then(() => toast("📋 Link copiado al portapapeles"))
+      .catch(() => toast("Comparte este link: " + url));
+  }
 }
 
 // ── TALLER ────────────────────────────────────────────────────
