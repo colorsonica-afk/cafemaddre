@@ -194,6 +194,11 @@ function mostrarVistaInvitado() {
   document.getElementById("prof-nivel-badge").textContent = "🌿 Vecino";
   document.getElementById("prof-puntos").textContent  = "—";
   document.getElementById("btn-redeem-pts").disabled  = true;
+  // Botones header: modo invitado
+  const btnIzq = document.getElementById("prof-btn-izq");
+  const btnDer = document.getElementById("prof-btn-der");
+  btnIzq.textContent = "→"; btnIzq.className = "icon-btn"; btnIzq.onclick = abrirModalRegistro;
+  btnDer.textContent = "↻"; btnDer.className = "icon-btn"; btnDer.onclick = loadProfile;
   document.getElementById("perfil-incompleto-banner").classList.add("hidden");
   document.getElementById("flash-banner").classList.add("hidden");
   const estadoEl = document.getElementById("estado-tienda");
@@ -421,6 +426,13 @@ function renderProfile(res) {
   const badge = document.getElementById("prof-nivel-badge");
   badge.textContent = (nivelEmoji[cliente.nivel] || "") + " " + cliente.nivel;
 
+  // Botones header: modo logueado
+  const inicial = (cliente.nombre || cliente.correo || "?")[0].toUpperCase();
+  const btnIzqL = document.getElementById("prof-btn-izq");
+  const btnDerL = document.getElementById("prof-btn-der");
+  btnIzqL.textContent = "↩"; btnIzqL.className = "icon-btn"; btnIzqL.onclick = logout;
+  btnDerL.textContent = inicial; btnDerL.className = "icon-btn icon-btn-inicial"; btnDerL.onclick = loadProfile;
+
   // Puntos
   document.getElementById("prof-puntos").textContent = puntos.acumulados;
   const elTotal    = document.getElementById("stat-total");    if (elTotal)    elTotal.textContent    = puntos.totalProductos;
@@ -454,6 +466,7 @@ function renderProfile(res) {
 
   // Load extras
   loadMusica();
+  loadTrueque();
   if (state.profile?.config?.saboresRollito) {
     initReservaSabores(state.profile.config.saboresRollito);
   } else {
@@ -637,6 +650,148 @@ async function alertarTaller() {
   const res = await api("alertaTaller", { correo: state.correo });
   hideLoading();
   toast(res.ok ? "🎨 ¡Listo! Te contactamos para confirmar tu cupo" : "❌ " + res.error);
+}
+
+// ── TRUEQUE DE LIBROS ─────────────────────────────────────────
+let _moodSeleccionado = "para llorar";
+
+function initMoodChips() {
+  document.querySelectorAll(".mood-chip").forEach(chip => {
+    chip.onclick = () => {
+      document.querySelectorAll(".mood-chip").forEach(c => c.classList.remove("active"));
+      chip.classList.add("active");
+      _moodSeleccionado = chip.dataset.mood;
+    };
+  });
+}
+
+async function loadTrueque() {
+  const res = await api("getTrueque", { correo: state.correo || "" });
+  if (!res.ok) return;
+
+  // Input visible solo si no tiene libro publicado
+  const inputWrap = document.getElementById("trueque-input-wrap");
+  const miLibroWrap = document.getElementById("mi-libro-wrap");
+  if (res.miLibro) {
+    inputWrap.classList.add("hidden");
+    miLibroWrap.classList.remove("hidden");
+    miLibroWrap.innerHTML = `
+      <div class="mi-libro-chip">
+        <span>📖 <strong>${res.miLibro.titulo}</strong> · <em>${res.miLibro.mood}</em></span>
+        <button onclick="retirarLibro('${res.miLibro.id}')" class="retirar-btn">Retirar</button>
+      </div>`;
+  } else {
+    inputWrap.classList.remove("hidden");
+    miLibroWrap.classList.add("hidden");
+    miLibroWrap.innerHTML = "";
+    initMoodChips();
+  }
+
+  renderTruequeWall(res.libros, res.miLibro);
+  renderPropuestas(res.propuestas);
+  renderSabadoBanner(res.matchesSabado);
+}
+
+function renderTruequeWall(libros, miLibro) {
+  const wall = document.getElementById("trueque-wall");
+  if (!libros || !libros.length) {
+    wall.innerHTML = "<p class='trueque-empty'>Sé el primero en poner un libro 📖</p>";
+    return;
+  }
+  wall.innerHTML = "";
+  libros.forEach(l => {
+    const esMio = miLibro && String(l.id) === String(miLibro.id);
+    const div = document.createElement("div");
+    div.className = "trueque-book-card";
+    div.innerHTML = `
+      <span class="trueque-book-icon">📖</span>
+      <div class="trueque-book-info">
+        <p class="trueque-book-title">${l.titulo}</p>
+        <p class="trueque-book-meta">por ${l.nombre || l.correo.split("@")[0]}</p>
+        <span class="trueque-mood-tag">${l.mood}</span>
+      </div>
+      ${esMio
+        ? `<span class="trueque-tuyo">tuyo</span>`
+        : `<button class="trueque-heart ${l.yaDiHeart ? 'active' : ''}" onclick="heartLibro('${l.id}')">♥ ${l.hearts || 0}</button>`
+      }`;
+    wall.appendChild(div);
+  });
+}
+
+function renderPropuestas(propuestas) {
+  const card = document.getElementById("trueque-propuestas-card");
+  const list = document.getElementById("trueque-propuestas-list");
+  if (!propuestas || !propuestas.length) { card.classList.add("hidden"); return; }
+  card.classList.remove("hidden");
+  list.innerHTML = "";
+  propuestas.forEach(p => {
+    const div = document.createElement("div");
+    div.className = "trueque-propuesta";
+    div.innerHTML = `
+      <div class="propuesta-header">
+        <div>
+          <p class="propuesta-user">de ${p.nombre_oferta || p.correo_oferta.split("@")[0]}</p>
+          <p class="propuesta-book">${p.libro_oferta_titulo}</p>
+          <p class="propuesta-offer">a cambio de tu "<em>${p.libro_receptor_titulo}</em>"</p>
+        </div>
+        <span class="propuesta-badge">${p.mood_oferta || ""}</span>
+      </div>
+      <div class="propuesta-actions">
+        <button class="btn-aceptar" onclick="responderPropuesta('${p.id}','aceptado')">Aceptar</button>
+        <button class="btn-rechazar" onclick="responderPropuesta('${p.id}','rechazado')">Rechazar</button>
+      </div>`;
+    list.appendChild(div);
+  });
+}
+
+function renderSabadoBanner(count) {
+  const banner = document.getElementById("trueque-sabado");
+  if (!count) { banner.classList.add("hidden"); return; }
+  banner.classList.remove("hidden");
+  document.getElementById("trueque-match-num").textContent = count;
+}
+
+async function publicarLibro() {
+  if (!requireAuth("publicar un libro en el trueque")) return;
+  const titulo = document.getElementById("trueque-titulo").value.trim();
+  if (!titulo) { toast("Escribe el título del libro 📖"); return; }
+  showLoading();
+  const res = await api("publicarLibro", { correo: state.correo, titulo, mood: _moodSeleccionado });
+  hideLoading();
+  if (!res.ok) { toast("❌ " + res.error); return; }
+  document.getElementById("trueque-titulo").value = "";
+  toast("📚 ¡Libro publicado! A ver quién lo quiere");
+  loadTrueque();
+}
+
+async function heartLibro(id) {
+  if (!requireAuth("proponer un trueque")) return;
+  showLoading();
+  const res = await api("heartLibro", { correo: state.correo, id });
+  hideLoading();
+  if (!res.ok) { toast("❌ " + res.error); return; }
+  toast("💌 ¡Propuesta enviada! El dueño decidirá si acepta");
+  loadTrueque();
+}
+
+async function responderPropuesta(id, accion) {
+  showLoading();
+  const res = await api("responderPropuesta", { correo: state.correo, id, accion });
+  hideLoading();
+  if (!res.ok) { toast("❌ " + res.error); return; }
+  toast(accion === "aceptado"
+    ? "🎉 ¡Match! Se verán el sábado en Maddre 📚"
+    : "Propuesta rechazada");
+  loadTrueque();
+}
+
+async function retirarLibro(id) {
+  showLoading();
+  const res = await api("retirarLibro", { correo: state.correo, id });
+  hideLoading();
+  if (!res.ok) { toast("❌ " + res.error); return; }
+  toast("📖 Libro retirado del trueque");
+  loadTrueque();
 }
 
 // ── MÚSICA ────────────────────────────────────────────────────

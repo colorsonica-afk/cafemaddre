@@ -258,6 +258,13 @@ html, body {
   transition: background .15s;
 }
 .icon-btn:hover { background: rgba(255,255,255,.15); }
+.icon-btn-inicial {
+  background: rgba(255,255,255,.2);
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 600;
+  font-size: .95rem;
+  letter-spacing: 0;
+}
 
 /* ── ERROR ───────────────────────────────────────────────── */
 .error-msg {
@@ -690,6 +697,154 @@ html, body {
 .musica-card .sec-title { color: #F5D98A; }
 .musica-card .sec-sub   { color: rgba(255,255,255,.5); }
 .musica-input-row { display: flex; gap: .5rem; margin: .85rem 0; }
+
+/* ── TRUEQUE ─────────────────────────────────────────────── */
+.trueque-card {
+  background: #2C1A0A;
+  margin: .75rem 1rem;
+}
+.trueque-card .sec-title { color: #F5D98A; }
+.trueque-card .sec-sub   { color: rgba(255,255,255,.45); margin-bottom: .85rem; }
+
+.trueque-input-row {
+  display: flex; gap: .5rem; margin-bottom: .65rem;
+}
+.trueque-input {
+  flex: 1;
+  background: rgba(255,255,255,.08);
+  border: 1.5px solid rgba(255,255,255,.12);
+  border-radius: 99px;
+  padding: .7rem 1.1rem;
+  font-family: 'DM Sans', sans-serif;
+  font-size: .9rem;
+  color: #fff;
+  outline: none;
+}
+.trueque-input::placeholder { color: rgba(255,255,255,.3); }
+.trueque-send-btn {
+  width: 44px; height: 44px;
+  background: #C8922A;
+  border: none; border-radius: 50%;
+  color: #fff; font-size: 1.1rem;
+  cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.mood-chips { display: flex; gap: .4rem; flex-wrap: wrap; margin-bottom: .85rem; }
+.mood-chip {
+  background: rgba(255,255,255,.07);
+  border: 1.5px solid transparent;
+  border-radius: 99px;
+  padding: .3rem .85rem;
+  font-size: .75rem;
+  color: rgba(255,255,255,.5);
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: all .2s;
+}
+.mood-chip.active {
+  border-color: #C8922A;
+  color: #E4A830;
+  background: rgba(200,146,42,.12);
+}
+
+.mi-libro-chip {
+  display: flex; align-items: center; justify-content: space-between;
+  background: rgba(200,146,42,.12);
+  border: 1px solid rgba(200,146,42,.3);
+  border-radius: 12px;
+  padding: .65rem 1rem;
+  margin-bottom: .75rem;
+  font-size: .84rem;
+  color: #E4A830;
+}
+.retirar-btn {
+  background: none; border: 1px solid rgba(200,146,42,.4);
+  border-radius: 99px; padding: .2rem .7rem;
+  font-size: .75rem; color: rgba(200,146,42,.7);
+  cursor: pointer; font-family: 'DM Sans', sans-serif;
+}
+
+.trueque-wall { display: flex; flex-direction: column; gap: .5rem; }
+.trueque-empty { color: rgba(255,255,255,.3); font-size: .84rem; text-align: center; padding: .75rem 0; }
+
+.trueque-book-card {
+  display: flex; align-items: center; gap: .75rem;
+  background: rgba(255,255,255,.05);
+  border-radius: 12px;
+  padding: .75rem 1rem;
+}
+.trueque-book-icon { font-size: 1.2rem; flex-shrink: 0; }
+.trueque-book-info { flex: 1; min-width: 0; }
+.trueque-book-title {
+  font-size: .88rem; font-weight: 500;
+  color: #F2EDE4;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.trueque-book-meta { font-size: .75rem; color: rgba(255,255,255,.35); margin-top: .1rem; }
+.trueque-mood-tag {
+  display: inline-block;
+  font-size: .7rem; color: #C8922A;
+  background: rgba(200,146,42,.12);
+  border-radius: 99px; padding: .15rem .6rem;
+  margin-top: .25rem;
+}
+.trueque-heart {
+  background: rgba(255,255,255,.07); border: none;
+  border-radius: 99px; padding: .35rem .75rem;
+  color: rgba(255,255,255,.4); font-size: .8rem;
+  cursor: pointer; white-space: nowrap; flex-shrink: 0;
+  font-family: 'DM Sans', sans-serif;
+  transition: all .2s;
+}
+.trueque-heart.active { color: #E07070; background: rgba(224,112,112,.1); }
+.trueque-tuyo {
+  font-size: .72rem; color: rgba(200,146,42,.6);
+  background: rgba(200,146,42,.1); border-radius: 99px;
+  padding: .25rem .65rem; flex-shrink: 0;
+}
+
+/* Propuestas */
+.trueque-propuesta {
+  border: 1.5px solid var(--border);
+  border-radius: 14px; padding: .9rem 1rem; margin-bottom: .65rem;
+}
+.propuesta-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: .75rem; }
+.propuesta-user  { font-size: .75rem; color: var(--text-lt); }
+.propuesta-book  { font-size: .9rem; font-weight: 500; color: var(--cafe); margin-top: .15rem; }
+.propuesta-offer { font-size: .78rem; color: var(--text-lt); margin-top: .1rem; }
+.propuesta-badge {
+  font-size: .7rem; background: #FDF6E8; color: #C8922A;
+  border: 1px solid #EDD9A3; border-radius: 99px; padding: .2rem .6rem;
+  white-space: nowrap; flex-shrink: 0;
+}
+.propuesta-actions { display: flex; gap: .5rem; }
+.btn-aceptar {
+  flex: 1; background: #4CAF7D; color: #fff;
+  border: none; border-radius: 99px; padding: .6rem;
+  font-family: 'DM Sans', sans-serif; font-size: .85rem; font-weight: 500; cursor: pointer;
+}
+.btn-rechazar {
+  flex: 1; background: transparent; color: #C0504A;
+  border: 1.5px solid #EDCDCC; border-radius: 99px; padding: .6rem;
+  font-family: 'DM Sans', sans-serif; font-size: .85rem; cursor: pointer;
+}
+
+/* Sábado banner */
+.trueque-sabado {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--cafe);
+  border-radius: var(--radius); margin: 0 1rem .75rem;
+  padding: 1rem 1.25rem;
+}
+.trueque-sabado-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem; color: #F5D98A; margin-bottom: .2rem;
+}
+.trueque-sabado-sub  { font-size: .78rem; color: rgba(255,255,255,.5); line-height: 1.4; }
+.trueque-sabado-count { text-align: center; flex-shrink: 0; }
+.trueque-sabado-num  { font-family: 'Playfair Display', serif; font-size: 2rem; color: #F5D98A; line-height: 1; }
+.trueque-sabado-label { font-size: .7rem; color: rgba(255,255,255,.4); margin-top: .15rem; }
 
 /* ── MENÚ CARD ───────────────────────────────────────────── */
 .menu-card { margin: .75rem 1rem; }

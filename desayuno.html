@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lluvia de Desayunos - Café Maddre</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #2c1e16; 
+            font-family: 'Press Start 2P', cursive;
+            touch-action: none; 
+        }
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-image: radial-gradient(#4a3320 10%, transparent 10%), radial-gradient(#4a3320 10%, transparent 10%);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+        }
+        canvas {
+            background-color: #f4e4d4; 
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+            border: 4px solid #8b5a2b;
+            border-radius: 8px;
+            max-width: 100%;
+            max-height: 100%;
+            cursor: pointer;
+        }
+        .ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        #screens {
+            pointer-events: auto;
+        }
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
+            text-shadow: 2px 2px #000;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+
+    <div class="ui-layer">
+        <div class="top-bar text-white text-xs md:text-lg">
+            <span id="scoreDisplay">Puntos: 0</span>
+            <span id="livesDisplay">Vidas: 🥖🥖🥖</span>
+        </div>
+
+        <div id="screens" class="absolute inset-0 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm z-10 transition-opacity">
+            <h1 id="screenTitle" class="text-xl md:text-4xl text-[#f4e4d4] text-center mb-6 leading-relaxed" style="text-shadow: 4px 4px #8b5a2b;">
+                LLUVIA DE DESAYUNOS<br>
+                <span class="text-sm md:text-2xl text-[#facc15]">EN CAFÉ MADDRE</span>
+            </h1>
+            <p id="screenSubtitle" class="text-white text-[10px] md:text-sm text-center mb-8 max-w-md leading-loose">
+                Arrastra la canasta 🧺 para atrapar.<br><br>
+                🥖 = 10 pts (¡No los dejes caer!)<br>
+                ☕ = 20 pts (¡Atrapa el café!)<br>
+                🦋 = 50 pts (Vuelan en zigzag)<br>
+                💣 = ¡Peligro! Te aturde 2 seg.
+            </p>
+            <button id="actionBtn" class="bg-[#8b5a2b] hover:bg-[#a66d35] text-white px-8 py-4 border-4 border-[#5c3a18] rounded shadow-[0_6px_0_#5c3a18] active:shadow-[0_0px_0_#5c3a18] active:translate-y-[6px] transition-all text-xs md:text-base">
+                JUGAR 🎮
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    const screens = document.getElementById('screens');
+    const screenTitle = document.getElementById('screenTitle');
+    const screenSubtitle = document.getElementById('screenSubtitle');
+    const actionBtn = document.getElementById('actionBtn');
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    const livesDisplay = document.getElementById('livesDisplay');
+
+    const GAME_WIDTH = 600;
+    const GAME_HEIGHT = 800;
+    
+    function resize() {
+        const scale = Math.min(window.innerWidth / GAME_WIDTH, window.innerHeight / GAME_HEIGHT);
+        canvas.width = GAME_WIDTH;
+        canvas.height = GAME_HEIGHT;
+        canvas.style.width = `${GAME_WIDTH * scale}px`;
+        canvas.style.height = `${GAME_HEIGHT * scale}px`;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    let gameState = 'START'; 
+    let score = 0;
+    let missedBreads = 0;
+    const MAX_MISSES = 3;
+    let difficultyMultiplier = 1;
+    let frames = 0;
+
+    const EMOJIS = {
+        player: '🧺',
+        bread: '🥖',
+        coffee: '☕',
+        butterfly: '🦋',
+        danger: '💣',
+        stun: '💫'
+    };
+
+    let player = {
+        x: GAME_WIDTH / 2,
+        y: GAME_HEIGHT - 100,
+        size: 70,
+        targetX: GAME_WIDTH / 2,
+        freezeTimer: 0
+    };
+
+    let items = [];
+
+    function updateTargetX(clientX) {
+        if (gameState !== 'PLAYING') return;
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        let x = (clientX - rect.left) * scaleX;
+        if (x < player.size/2) x = player.size/2;
+        if (x > GAME_WIDTH - player.size/2) x = GAME_WIDTH - player.size/2;
+        player.targetX = x;
+    }
+
+    canvas.addEventListener('mousemove', (e) => updateTargetX(e.clientX));
+    canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        updateTargetX(e.touches[0].clientX);
+    });
+    canvas.addEventListener('touchstart', (e) => {
+        if (gameState === 'PLAYING') updateTargetX(e.touches[0].clientX);
+    });
+
+    function resetGame() {
+        score = 0;
+        missedBreads = 0;
+        difficultyMultiplier = 1;
+        frames = 0;
+        items = [];
+        player.x = GAME_WIDTH / 2;
+        player.targetX = GAME_WIDTH / 2;
+        player.freezeTimer = 0;
+        updateUI();
+    }
+
+    function spawnItem() {
+        const spawnRate = Math.max(25, 70 - (difficultyMultiplier * 10)); 
+        if (frames % Math.floor(spawnRate) === 0) {
+            const rand = Math.random();
+            let type = 'bread';
+            if (rand > 0.88) type = 'danger'; 
+            else if (rand > 0.75) type = 'butterfly'; 
+            else if (rand > 0.45) type = 'coffee'; 
+            
+            items.push({
+                x: Math.random() * (GAME_WIDTH - 60) + 30,
+                y: -50,
+                size: 55,
+                type: type,
+                speed: (Math.random() * 2 + 3) * difficultyMultiplier,
+                initialX: 0,
+                timeOffset: Math.random() * 100
+            });
+            items[items.length-1].initialX = items[items.length-1].x;
+        }
+    }
+
+    function checkCollision(px, py, pSize, ix, iy, iSize) {
+        const dx = px - ix;
+        const dy = py - iy;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        return distance < (pSize/2 + iSize/2) - 10;
+    }
+
+    function update() {
+        if (gameState !== 'PLAYING') return;
+        frames++;
+        difficultyMultiplier += 0.0006;
+
+        if (player.freezeTimer > 0) {
+            player.freezeTimer--;
+        } else {
+            player.x += (player.targetX - player.x) * 0.25; 
+        }
+
+        spawnItem();
+
+        for (let i = items.length - 1; i >= 0; i--) {
+            let item = items[i];
+            item.y += item.speed;
+
+            if (item.type === 'butterfly') {
+                item.x = item.initialX + Math.sin((frames + item.timeOffset) * 0.05) * 70;
+            }
+
+            if (checkCollision(player.x, player.y, player.size, item.x, item.y, item.size)) {
+                if (item.type === 'bread') score += 10;
+                else if (item.type === 'coffee') score += 20;
+                else if (item.type === 'butterfly') score += 50;
+                else if (item.type === 'danger') player.freezeTimer = 120;
+                
+                updateUI();
+                items.splice(i, 1);
+                continue;
+            }
+
+            if (item.y > GAME_HEIGHT + item.size) {
+                if (item.type === 'bread') {
+                    missedBreads++;
+                    updateUI();
+                    canvas.style.borderColor = 'red';
+                    setTimeout(() => canvas.style.borderColor = '#8b5a2b', 200);
+                    if (missedBreads >= MAX_MISSES) endGame();
+                }
+                items.splice(i, 1);
+            }
+        }
+    }
+
+    function renderEmoji(emoji, x, y, size) {
+        ctx.font = `${size}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(emoji, x, y);
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        ctx.beginPath();
+        ctx.moveTo(0, player.y + player.size/2);
+        ctx.lineTo(GAME_WIDTH, player.y + player.size/2);
+        ctx.strokeStyle = "rgba(139, 90, 43, 0.2)";
+        ctx.lineWidth = 4;
+        ctx.stroke();
+
+        for (let item of items) {
+            let emoji = EMOJIS.bread;
+            if (item.type === 'butterfly') emoji = EMOJIS.butterfly;
+            if (item.type === 'danger') emoji = EMOJIS.danger;
+            if (item.type === 'coffee') emoji = EMOJIS.coffee;
+            
+            ctx.save();
+            ctx.translate(item.x, item.y);
+            if (item.type === 'bread' || item.type === 'coffee') {
+                ctx.rotate(frames * 0.03);
+            }
+            ctx.font = `${item.size}px sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(emoji, 0, 0);
+            ctx.restore();
+        }
+
+        if (player.freezeTimer > 0) {
+            ctx.globalAlpha = (Math.floor(frames / 10) % 2 === 0) ? 0.5 : 1;
+            renderEmoji(EMOJIS.player, player.x, player.y, player.size);
+            ctx.globalAlpha = 1;
+            renderEmoji(EMOJIS.stun, player.x, player.y - 10, player.size * 0.8);
+            ctx.font = "14px 'Press Start 2P'";
+            ctx.fillStyle = "#ff4444";
+            ctx.fillText("¡ATURDIDO!", player.x, player.y - 50);
+        } else {
+            renderEmoji(EMOJIS.player, player.x, player.y, player.size);
+        }
+    }
+
+    function gameLoop() {
+        update();
+        draw();
+        requestAnimationFrame(gameLoop);
+    }
+
+    function updateUI() {
+        scoreDisplay.innerText = `Puntos: ${score}`;
+        let hearts = '';
+        for (let i = 0; i < (MAX_MISSES - missedBreads); i++) hearts += '🥖';
+        for (let i = 0; i < missedBreads; i++) hearts += '❌';
+        livesDisplay.innerText = `Vidas: ${hearts}`;
+    }
+
+    function startGame() {
+        resetGame();
+        gameState = 'PLAYING';
+        screens.classList.add('hidden');
+        screenTitle.innerHTML = 'LLUVIA DE DESAYUNOS<br><span class="text-sm md:text-2xl text-[#facc15]">EN CAFÉ MADDRE</span>';
+        screenTitle.style.color = '#f4e4d4';
+    }
+
+    function endGame() {
+        gameState = 'GAME_OVER';
+        screens.classList.remove('hidden');
+        screenTitle.innerHTML = '¡SE ACABÓ!<br><span class="text-lg md:text-2xl">Demasiados panes perdidos</span>';
+        screenTitle.style.color = '#ff4444'; 
+        screenSubtitle.innerHTML = `Puntuación: <b>${score}</b><br><br>¡Gracias por visitar Café Maddre!<br>¿Otra ronda?`;
+        actionBtn.innerText = 'REINTENTAR 🔄';
+    }
+
+    actionBtn.addEventListener('click', startGame);
+    draw();
+    gameLoop();
+</script>
+</body>
+</html>

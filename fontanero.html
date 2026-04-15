@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>El Fontanero - Café Maddre</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #2c1e16; /* Color café oscuro vintage */
+            font-family: 'Press Start 2P', cursive;
+            touch-action: none; /* Evita el scroll en móviles al tocar */
+        }
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-image: radial-gradient(#4a3320 10%, transparent 10%), radial-gradient(#4a3320 10%, transparent 10%);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+        }
+        canvas {
+            background-color: #f4e4d4; /* Color crema vintage */
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+            border: 4px solid #8b5a2b;
+            border-radius: 8px;
+            max-width: 100%;
+            max-height: 100%;
+            image-rendering: pixelated;
+        }
+        .ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .touch-controls {
+            pointer-events: auto;
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
+            padding-bottom: 40px;
+            opacity: 0.7;
+        }
+        .touch-btn {
+            background-color: rgba(139, 90, 43, 0.8);
+            color: white;
+            border: 4px solid #5c3a18;
+            border-radius: 50%;
+            width: 70px;
+            height: 70px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            user-select: none;
+            box-shadow: 0 4px 0 #5c3a18;
+            margin: 0 10px;
+        }
+        .touch-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 #5c3a18;
+        }
+        #screens {
+            pointer-events: auto;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- Interfaz de Usuario -->
+    <div class="ui-layer">
+        <!-- Puntuación -->
+        <div class="p-4 text-white text-sm md:text-xl text-center md:text-left" style="text-shadow: 2px 2px #000;">
+            <span id="scoreDisplay">Puntos: 0</span>
+        </div>
+
+        <!-- Pantallas (Inicio, Fin, Victoria) -->
+        <div id="screens" class="absolute inset-0 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm z-10 transition-opacity">
+            <h1 id="screenTitle" class="text-xl md:text-4xl text-[#f4e4d4] text-center mb-6 leading-relaxed" style="text-shadow: 4px 4px #8b5a2b;">
+                EL FONTANERO DE<br>
+                <span class="text-sm md:text-2xl text-[#facc15]">CAFÉ MADDRE</span>
+            </h1>
+            <p id="screenSubtitle" class="text-white text-[10px] md:text-sm text-center mb-8 max-w-md leading-loose">
+                Recoge baguettes 🥖, café ☕ y mariposas 🦋.<br>
+                ¡Evita las bombas 💣 o perderás!<br>
+                ¡Salta el muro y llega al castillo 🏰👸!
+            </p>
+            <button id="actionBtn" class="bg-[#8b5a2b] hover:bg-[#a66d35] text-white px-8 py-4 border-4 border-[#5c3a18] rounded shadow-[0_6px_0_#5c3a18] active:shadow-[0_0px_0_#5c3a18] active:translate-y-[6px] transition-all text-sm md:text-base">
+                JUGAR 🎮
+            </button>
+        </div>
+
+        <!-- Controles Táctiles -->
+        <div class="touch-controls hidden md:flex" id="touchControls">
+            <div class="flex">
+                <button class="touch-btn" id="btnLeft">◀</button>
+                <button class="touch-btn" id="btnRight">▶</button>
+            </div>
+            <div>
+                <button class="touch-btn" id="btnJump">▲</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    const screens = document.getElementById('screens');
+    const screenTitle = document.getElementById('screenTitle');
+    const screenSubtitle = document.getElementById('screenSubtitle');
+    const actionBtn = document.getElementById('actionBtn');
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    const touchControls = document.getElementById('touchControls');
+
+    let gameState = 'START'; 
+    let score = 0;
+    let cameraX = 0;
+
+    const GAME_WIDTH = 800;
+    const GAME_HEIGHT = 640; 
+    const TILE_SIZE = 40;
+    
+    function resize() {
+        const scale = Math.min(window.innerWidth / GAME_WIDTH, window.innerHeight / GAME_HEIGHT);
+        canvas.width = GAME_WIDTH;
+        canvas.height = GAME_HEIGHT;
+        canvas.style.width = `${GAME_WIDTH * scale}px`;
+        canvas.style.height = `${GAME_HEIGHT * scale}px`;
+        
+        if (window.innerWidth <= 768) {
+            touchControls.classList.remove('hidden');
+        } else {
+            touchControls.classList.add('hidden');
+        }
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // Mapa en texto puro. 
+    // # = Pared, B = Baguette, * = Mariposa, C = Café, X = Bomba, G = Castillo, W = Princesa, @ = Inicio
+    // Agregué algunas bombas (X) para darle dificultad
+    const levelDesign = [
+        "                                                            ",
+        "                                                            ",
+        "                                                            ",
+        "                                                            ",
+        "                                                            ",
+        "                                                            ",
+        "                                                            ",
+        "                                  * ",
+        "                           B    ###                         ",
+        "                         ###                                ",
+        "                   * C                                      ",
+        "                 ###                    ###                 ",
+        "           B                                       #        ",
+        "@   C    ###  X       C      B      X              #  GW    ",
+        "############################################################",
+        "############################################################"
+    ];
+
+    const MAP_WIDTH = levelDesign[0].length * TILE_SIZE;
+
+    const EMOJIS = {
+        player: '👨🏻‍🔧',
+        wall: '🧱',
+        bread: '🥖',    // Baguette
+        butterfly: '🦋',
+        coffee: '☕',    // Café
+        bomb: '💣',      // Bomba
+        castle: '🏰',
+        princess: '👸'
+    };
+
+    let player = {
+        x: 0, y: 0,
+        width: 32, height: 32,
+        vx: 0, vy: 0,
+        speed: 5,
+        jumpForce: -13,
+        gravity: 0.6,
+        isGrounded: false,
+        facingRight: true
+    };
+
+    let platforms = [];
+    let items = [];
+    let bombs = [];
+    let goals = [];
+
+    const keys = { left: false, right: false, up: false };
+
+    window.addEventListener('keydown', (e) => {
+        if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
+        if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
+        if (e.code === 'ArrowUp' || e.code === 'KeyW' || e.code === 'Space') keys.up = true;
+    });
+    window.addEventListener('keyup', (e) => {
+        if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
+        if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
+        if (e.code === 'ArrowUp' || e.code === 'KeyW' || e.code === 'Space') keys.up = false;
+    });
+
+    const setupTouch = (id, keyName) => {
+        const btn = document.getElementById(id);
+        btn.addEventListener('touchstart', (e) => { e.preventDefault(); keys[keyName] = true; });
+        btn.addEventListener('touchend', (e) => { e.preventDefault(); keys[keyName] = false; });
+    };
+    setupTouch('btnLeft', 'left');
+    setupTouch('btnRight', 'right');
+    setupTouch('btnJump', 'up');
+
+    function loadLevel() {
+        platforms = []; items = []; bombs = []; goals = [];
+        score = 0;
+        updateScore();
+
+        for (let y = 0; y < levelDesign.length; y++) {
+            for (let x = 0; x < levelDesign[y].length; x++) {
+                const char = levelDesign[y][x];
+                const px = x * TILE_SIZE;
+                const py = y * TILE_SIZE;
+
+                if (char === '#') platforms.push({x: px, y: py, w: TILE_SIZE, h: TILE_SIZE});
+                if (char === 'B') items.push({x: px, y: py, w: TILE_SIZE, h: TILE_SIZE, type: 'bread', value: 10});
+                if (char === '*') items.push({x: px, y: py, w: TILE_SIZE, h: TILE_SIZE, type: 'butterfly', value: 50});
+                if (char === 'C') items.push({x: px, y: py, w: TILE_SIZE, h: TILE_SIZE, type: 'coffee', value: 20});
+                if (char === 'X') bombs.push({x: px, y: py, w: TILE_SIZE, h: TILE_SIZE}); // Carga de bombas
+                if (char === 'G') goals.push({x: px, y: py, w: TILE_SIZE, h: TILE_SIZE, type: 'castle'});
+                if (char === 'W') goals.push({x: px, y: py, w: TILE_SIZE, h: TILE_SIZE, type: 'princess'});
+                if (char === '@') {
+                    player.x = px + (TILE_SIZE - player.width) / 2;
+                    player.y = py + (TILE_SIZE - player.height) / 2;
+                    player.vx = 0; player.vy = 0;
+                }
+            }
+        }
+    }
+
+    function checkCollision(r1, r2) {
+        return r1.x < r2.x + r2.w && r1.x + r1.width > r2.x && r1.y < r2.y + r2.h && r1.y + r1.height > r2.y;
+    }
+
+    function update() {
+        if (gameState !== 'PLAYING') return;
+
+        // Movimiento Horizontal
+        if (keys.left) { player.vx = -player.speed; player.facingRight = false; }
+        else if (keys.right) { player.vx = player.speed; player.facingRight = true; }
+        else { player.vx = 0; }
+
+        player.x += player.vx;
+
+        for (let plat of platforms) {
+            if (checkCollision(player, plat)) {
+                if (player.vx > 0) player.x = plat.x - player.width;
+                else if (player.vx < 0) player.x = plat.x + plat.w;
+                player.vx = 0;
+            }
+        }
+
+        if (player.x < 0) player.x = 0;
+        if (player.x + player.width > MAP_WIDTH) player.x = MAP_WIDTH - player.width;
+
+        // Movimiento Vertical
+        player.vy += player.gravity;
+        
+        if (keys.up && player.isGrounded) {
+            player.vy = player.jumpForce;
+            player.isGrounded = false;
+        }
+
+        player.y += player.vy;
+        player.isGrounded = false;
+
+        for (let plat of platforms) {
+            if (checkCollision(player, plat)) {
+                if (player.vy > 0) {
+                    player.y = plat.y - player.height;
+                    player.vy = 0;
+                    player.isGrounded = true;
+                } else if (player.vy < 0) {
+                    player.y = plat.y + plat.h;
+                    player.vy = 0;
+                }
+            }
+        }
+
+        // Si por algún milagro sale de la pantalla por abajo, reaparece sin morir
+        if (player.y > GAME_HEIGHT) { 
+            player.y = 0;
+            player.vy = 0;
+        }
+
+        // Items (Baguettes, Café, Mariposas)
+        for (let i = items.length - 1; i >= 0; i--) {
+            if (checkCollision(player, items[i])) {
+                score += items[i].value;
+                updateScore();
+                items.splice(i, 1);
+            }
+        }
+
+        // Bombas (Colisión con hitbox ajustado)
+        for (let bomb of bombs) {
+            // Hitbox ligeramente más pequeño para ser más justos con el jugador
+            let bombHitbox = {x: bomb.x + 8, y: bomb.y + 8, w: bomb.w - 16, h: bomb.h - 16};
+            if (checkCollision(player, bombHitbox)) {
+                endGame(false); // ¡Pum! Pierdes.
+            }
+        }
+
+        // Metas
+        for (let goal of goals) {
+            if (checkCollision(player, goal)) { endGame(true); }
+        }
+
+        // Cámara centrada
+        cameraX = player.x - GAME_WIDTH / 2 + player.width / 2;
+        if (cameraX < 0) cameraX = 0;
+        if (cameraX > MAP_WIDTH - GAME_WIDTH) cameraX = MAP_WIDTH - GAME_WIDTH;
+    }
+
+    function renderEmoji(emoji, x, y, size, flip = false) {
+        ctx.font = `${size}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        ctx.save();
+        ctx.translate(x + size/2, y + size/2);
+        if (flip) ctx.scale(-1, 1);
+        ctx.fillText(emoji, 0, 0);
+        ctx.restore();
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.save();
+        ctx.translate(-cameraX, 0);
+
+        for (let plat of platforms) renderEmoji(EMOJIS.wall, plat.x, plat.y, TILE_SIZE + 2);
+        
+        const floatOffset = Math.sin(Date.now() / 200) * 3;
+        for (let item of items) {
+            let emoji = EMOJIS.bread;
+            if (item.type === 'butterfly') emoji = EMOJIS.butterfly;
+            if (item.type === 'coffee') emoji = EMOJIS.coffee;
+            renderEmoji(emoji, item.x, item.y + floatOffset, TILE_SIZE * 0.8);
+        }
+
+        // Dibujar bombas
+        for (let bomb of bombs) {
+            // Pequeño efecto de "latido" para las bombas
+            const bombPulse = Math.sin(Date.now() / 100) * 2;
+            renderEmoji(EMOJIS.bomb, bomb.x, bomb.y, TILE_SIZE * 0.8 + bombPulse);
+        }
+
+        for (let goal of goals) {
+            const emoji = goal.type === 'castle' ? EMOJIS.castle : EMOJIS.princess;
+            renderEmoji(emoji, goal.x, goal.y, TILE_SIZE);
+        }
+
+        if (gameState !== 'GAME_OVER') {
+            renderEmoji(EMOJIS.player, player.x - (TILE_SIZE - player.width)/2, player.y - (TILE_SIZE - player.height)/2, TILE_SIZE, !player.facingRight);
+        }
+
+        ctx.restore();
+    }
+
+    function gameLoop() {
+        update();
+        draw();
+        requestAnimationFrame(gameLoop);
+    }
+
+    function updateScore() { scoreDisplay.innerText = `Puntos: ${score}`; }
+
+    function startGame() {
+        gameState = 'PLAYING';
+        screens.classList.add('hidden');
+        loadLevel();
+    }
+
+    function endGame(victory) {
+        gameState = victory ? 'VICTORY' : 'GAME_OVER';
+        screens.classList.remove('hidden');
+        
+        if (victory) {
+            screenTitle.innerHTML = '¡MÁS QUE LISTO! 🎉<br><span class="text-sm md:text-2xl text-[#facc15]">CAFÉ MADDRE</span>';
+            screenTitle.style.color = '#ffd700'; 
+            screenSubtitle.innerHTML = `Puntuación final: ${score}<br>¡Eres un héroe del café!`;
+            actionBtn.innerText = 'JUGAR DE NUEVO 🎮';
+        } else {
+            screenTitle.innerHTML = '¡BUM! 💥<br><span class="text-sm md:text-2xl text-[#facc15]">CAFÉ MADDRE</span>';
+            screenTitle.style.color = '#ff4444'; 
+            screenSubtitle.innerHTML = `Tocaste una bomba.<br>Puntuación: ${score}<br>¡Inténtalo otra vez!`;
+            actionBtn.innerText = 'REINTENTAR 🔄';
+        }
+    }
+
+    actionBtn.addEventListener('click', startGame);
+
+    loadLevel();
+    draw();
+    gameLoop();
+
+</script>
+</body>
+</html>

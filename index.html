@@ -145,9 +145,9 @@
   <!-- Header -->
   <div class="profile-header">
     <div class="profile-top">
-      <button class="icon-btn" onclick="logout()">↩</button>
+      <button id="prof-btn-izq" class="icon-btn" onclick="abrirModalRegistro()">→</button>
       <span id="prof-nivel-badge" class="nivel-badge">🌿 Vecino</span>
-      <button class="icon-btn" onclick="loadProfile()">↻</button>
+      <button id="prof-btn-der" class="icon-btn" onclick="loadProfile()">↻</button>
     </div>
     <h2 id="prof-nombre">Hola!</h2>
     <p id="prof-correo" class="prof-sub"></p>
@@ -283,6 +283,51 @@
       <button class="musica-btn" onclick="sugerirCancion()">→</button>
     </div>
     <div id="musica-wall" class="musica-wall"></div>
+  </div>
+
+  <!-- Trueque de Libros -->
+  <div class="card trueque-card">
+    <p class="sec-title">Trueque de libros 📚</p>
+    <p class="sec-sub">Trae uno, llévate otro — los matches se concretan cada sábado</p>
+
+    <!-- Publicar libro -->
+    <div id="trueque-input-wrap">
+      <div class="trueque-input-row">
+        <input id="trueque-titulo" type="text" placeholder="Título · Autor" class="trueque-input">
+        <button class="trueque-send-btn" onclick="publicarLibro()">→</button>
+      </div>
+      <div class="mood-chips" id="mood-chips">
+        <button class="mood-chip active" data-mood="para llorar">para llorar</button>
+        <button class="mood-chip" data-mood="para reír">para reír</button>
+        <button class="mood-chip" data-mood="para pensar">para pensar</button>
+        <button class="mood-chip" data-mood="para no dormir">para no dormir</button>
+      </div>
+    </div>
+
+    <!-- Mi libro publicado -->
+    <div id="mi-libro-wrap" class="hidden"></div>
+
+    <!-- Wall de libros -->
+    <div id="trueque-wall" class="trueque-wall"></div>
+  </div>
+
+  <!-- Propuestas recibidas -->
+  <div id="trueque-propuestas-card" class="card hidden" style="margin:.75rem 1rem">
+    <p class="sec-title" style="color:var(--cafe)">Propuestas para ti 💌</p>
+    <p class="sec-sub" style="color:var(--text-lt)">Tu libro recibió estas ofertas de cambio</p>
+    <div id="trueque-propuestas-list"></div>
+  </div>
+
+  <!-- Sábado de Trueque banner -->
+  <div id="trueque-sabado" class="trueque-sabado hidden">
+    <div>
+      <p class="trueque-sabado-title">Sábado de Trueque ☕</p>
+      <p class="trueque-sabado-sub">Los matches confirmados se encuentran en Maddre</p>
+    </div>
+    <div class="trueque-sabado-count">
+      <p id="trueque-match-num" class="trueque-sabado-num">0</p>
+      <p class="trueque-sabado-label">matches</p>
+    </div>
   </div>
 
   <!-- Menú -->
