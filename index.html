@@ -439,7 +439,7 @@
     </div>
     <div id="admin-login-error" class="error-msg hidden"></div>
     <button class="btn-primary" onclick="adminAuthAndGo('admin')">Panel Admin</button>
-    <button id="admin-login-btn-pos" class="btn-ghost" onclick="adminAuthAndGo('pos')">Ir a Caja 🦋</button>
+    <button id="admin-login-btn-pos" class="btn-ghost" onclick="window.location.href='pos.html'">Ir a Caja 🦋</button>
   </div>
 </div>
 
@@ -487,7 +487,7 @@
     </div>
     <div class="admin-topbar-right">
       <div id="admin-status-badge" class="status-badge cerrado">● Cerrado</div>
-      <button class="tab-switch-btn" onclick="showScreen('pos')">🦋 Caja</button>
+      <button class="tab-switch-btn" onclick="window.location.href='pos.html'">🦋 Caja</button>
       <button class="back-btn" onclick="showScreen('pin');pinReset()">Salir</button>
     </div>
   </div>
@@ -526,6 +526,11 @@
         <p id="adm-rollitos" class="as-num">—</p>
         <p class="as-lbl">rollitos canjeados</p>
       </div>
+      <div class="admin-stat">
+        <span class="as-icon">📚</span>
+        <p id="adm-libros" class="as-num">—</p>
+        <p class="as-lbl">libros a canjear</p>
+      </div>
     </div>
     <div class="card" style="margin:1rem">
       <p class="card-title">🎵 Top canciones de hoy</p>
@@ -536,8 +541,16 @@
   <!-- ── TAB CLIENTES ── -->
   <div id="admin-tab-clientes" class="admin-section hidden">
 
-    <!-- Agregar cliente nuevo -->
+    <!-- Nuevos vecinos esta semana -->
     <div class="card" style="margin:1rem 1rem .5rem">
+      <p class="sec-title" style="font-size:.85rem;margin-bottom:.75rem">🆕 Nuevos esta semana</p>
+      <div id="admin-nuevos-list" class="admin-nuevos-list">
+        <p style="color:var(--text-lt);font-size:.82rem">Cargando…</p>
+      </div>
+    </div>
+
+    <!-- Agregar cliente nuevo -->
+    <div class="card" style="margin:0 1rem .5rem">
       <p class="sec-title" style="font-size:.85rem;margin-bottom:.75rem">Agregar al club</p>
       <div class="admin-search-wrap" style="margin-bottom:.6rem">
         <span class="search-icon-adm">✉️</span>
@@ -653,12 +666,13 @@
 
 </div>
 
-<!-- ── POS ─────────────────────────────────────────────────── -->
+<!-- screen-pos se mudó a pos.html (PWA independiente) -->
+<!-- ── POS PLACEHOLDER (redirige a pos.html) ──────────────── -->
 <div id="screen-pos" class="screen">
   <div class="topbar">
     <button class="back-btn" onclick="showScreen('pin');pinReset()">← Salir</button>
     <h2>🦋 Caja</h2>
-    <button class="tab-switch-btn" onclick="showScreen('admin')">⚙️ Admin</button>
+    <span style="width:60px"></span>
   </div>
   <div class="scroll-wrap">
 

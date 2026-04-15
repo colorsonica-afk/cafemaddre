@@ -48,13 +48,22 @@ async function pinSubmit() {
 
 async function pinIrA(destino) {
   if (destino === "pos") {
-    showScreen("pos");
-    await initPOS();
+    if (window.POS_MODE) {
+      showScreen("pos");
+      await initPOS();
+    } else {
+      window.location.href = "pos.html";
+    }
   } else {
-    state.adminPass = POS_PIN_CLIENT;
-    showScreen("admin");
-    mostrarSaludoAdmin();
-    await loadAdminSummary();
+    // admin
+    if (window.POS_MODE) {
+      window.location.href = "index.html";
+    } else {
+      state.adminPass = POS_PIN_CLIENT;
+      showScreen("admin");
+      mostrarSaludoAdmin();
+      await loadAdminSummary();
+    }
   }
 }
 
@@ -168,6 +177,10 @@ function hideErr(el) { el.classList.add("hidden"); }
 
 // ── Loading ───────────────────────────────────────────────────
 window.addEventListener("load", () => setTimeout(() => {
+  if (window.POS_MODE) {
+    showScreen("pin");
+    return;
+  }
   const savedCorreo = localStorage.getItem("maddre_correo");
   if (savedCorreo) {
     restaurarSesion(savedCorreo);
@@ -1034,7 +1047,36 @@ async function loadAdminSummary() {
   document.getElementById("adm-transacciones").textContent = res.transacciones || 0;
   document.getElementById("adm-vecinos").textContent = res.vecinos || 0;
   document.getElementById("adm-rollitos").textContent = res.rollitosCanjeados || 0;
+  document.getElementById("adm-libros").textContent   = res.librosDisponibles || 0;
   document.getElementById("adm-recipients-pill").textContent = `👥 ${res.vecinos || 0} vecinos recibirán este mensaje`;
+
+  // Nuevos vecinos esta semana
+  const nuevosEl = document.getElementById("admin-nuevos-list");
+  if (nuevosEl) {
+    if (!res.nuevosVecinos || !res.nuevosVecinos.length) {
+      nuevosEl.innerHTML = "<p style='color:var(--text-lt);font-size:.82rem'>Ninguno esta semana aún 🦋</p>";
+    } else {
+      nuevosEl.innerHTML = res.nuevosVecinos.map(v => {
+        const nombre  = v.nombre || v.correo.split("@")[0];
+        const fecha   = v.fecha_registro ? new Date(v.fecha_registro).toLocaleDateString("es-CO", { day:"numeric", month:"short" }) : "";
+        const paso    = Number(v.nivel_registro) || 1;
+        const pasoTag = paso < 4
+          ? `<span class="nuevo-paso-tag">paso ${paso}/4</span>`
+          : `<span class="nuevo-paso-tag completo">✓ completo</span>`;
+        return `<div class="nuevo-vecino-row">
+          <span class="nuevo-vecino-avatar">${nombre[0]?.toUpperCase() || "?"}</span>
+          <div class="nuevo-vecino-info">
+            <p class="nuevo-vecino-nombre">${nombre}</p>
+            <p class="nuevo-vecino-correo">${v.correo}</p>
+          </div>
+          <div style="text-align:right">
+            ${pasoTag}
+            <p class="nuevo-vecino-fecha">${fecha}</p>
+          </div>
+        </div>`;
+      }).join("");
+    }
+  }
 
   // Status abierto/cerrado
   const badge = document.getElementById("admin-status-badge");

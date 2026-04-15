@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>PosMaddre</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest-pos.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PosMaddre">
+<meta name="theme-color" content="#4A2E1A">
+<link rel="apple-touch-icon" href="icon-pos.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-pos.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ── LOADING ────────────────────────────────────────────── -->
+<div id="screen-loading" class="screen active">
+  <div class="loading-center">
+    <div class="butterfly">🦋</div>
+    <p class="tagline">cargando caja…</p>
+  </div>
+</div>
+
+<!-- ── PIN CAJA ────────────────────────────────────────────── -->
+<div id="screen-pin" class="screen">
+  <div class="pin-wrap">
+    <div class="brand-block-sm" style="justify-content:center;margin-bottom:2rem">
+      <span>🦋</span>
+      <span class="brand-name-sm">PosMaddre</span>
+    </div>
+    <div class="pin-display">
+      <span id="pin-dot-1" class="pin-dot"></span>
+      <span id="pin-dot-2" class="pin-dot"></span>
+      <span id="pin-dot-3" class="pin-dot"></span>
+      <span id="pin-dot-4" class="pin-dot"></span>
+    </div>
+    <div id="pin-error" class="error-msg hidden" style="margin:.75rem 1rem 0"></div>
+    <div class="pin-pad">
+      <button class="pin-btn" onclick="pinPress('1')">1</button>
+      <button class="pin-btn" onclick="pinPress('2')">2</button>
+      <button class="pin-btn" onclick="pinPress('3')">3</button>
+      <button class="pin-btn" onclick="pinPress('4')">4</button>
+      <button class="pin-btn" onclick="pinPress('5')">5</button>
+      <button class="pin-btn" onclick="pinPress('6')">6</button>
+      <button class="pin-btn" onclick="pinPress('7')">7</button>
+      <button class="pin-btn" onclick="pinPress('8')">8</button>
+      <button class="pin-btn" onclick="pinPress('9')">9</button>
+      <button class="pin-btn pin-btn-clear" onclick="pinClear()">✕</button>
+      <button class="pin-btn" onclick="pinPress('0')">0</button>
+      <button class="pin-btn pin-btn-ok" onclick="pinSubmit()">→</button>
+    </div>
+    <div id="pin-destino" class="pin-destino hidden">
+      <button class="btn-primary" onclick="pinIrA('pos')">🦋 Abrir Caja</button>
+      <button class="btn-ghost" onclick="pinIrA('admin')" style="margin-top:.5rem">⚙️ Panel Admin</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── POS ─────────────────────────────────────────────────── -->
+<div id="screen-pos" class="screen">
+  <div class="topbar">
+    <button class="back-btn" onclick="showScreen('pin');pinReset()">← Salir</button>
+    <h2>🦋 Caja</h2>
+    <span style="width:60px"></span>
+  </div>
+  <div class="scroll-wrap">
+
+    <!-- PASO 1: Sector -->
+    <div id="pos-step-sector" class="pos-step">
+      <p class="pos-step-title">¿Dónde?</p>
+      <div id="pos-sector-list" class="pos-chips"></div>
+    </div>
+
+    <!-- PASO 2: Pedido -->
+    <div id="pos-step-pedido" class="pos-step hidden">
+      <div class="pos-pedido-header">
+        <p class="pos-step-title">Pedido <span id="pos-sector-label" class="pos-sector-tag"></span></p>
+        <button class="btn-link" onclick="posVolverSector()">cambiar sector</button>
+      </div>
+
+      <!-- Lista de items agregados -->
+      <div id="pos-items-list" class="pos-items-list"></div>
+
+      <!-- Agregar producto -->
+      <div class="card pos-agregar-card">
+        <p class="pos-agregar-title">+ Agregar producto</p>
+        <div class="field">
+          <label>Producto</label>
+          <select id="pos-sel-producto" onchange="posProductoChange()">
+            <option value="">— selecciona —</option>
+          </select>
+        </div>
+        <div id="pos-variedad-wrap" class="field hidden">
+          <label>Variedad</label>
+          <select id="pos-sel-variedad">
+            <option value="">— selecciona —</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Cantidad</label>
+          <div class="qty-ctrl">
+            <button class="qty-btn" onclick="posQtyChange(-1)">−</button>
+            <span id="pos-qty-val" class="qty-num">1</span>
+            <button class="qty-btn" onclick="posQtyChange(1)">+</button>
+          </div>
+        </div>
+        <button class="btn-ghost" onclick="posAgregarItem()">Agregar al pedido</button>
+      </div>
+
+      <!-- Total -->
+      <div id="pos-total-wrap" class="card pos-total-card hidden">
+        <div class="pos-total-row">
+          <span>Total</span>
+          <strong id="pos-total-val">$0</strong>
+        </div>
+        <button class="btn-primary" onclick="posSiguienteCliente()">Continuar →</button>
+      </div>
+    </div>
+
+    <!-- PASO 3: Cliente (opcional) -->
+    <div id="pos-step-cliente" class="pos-step hidden">
+      <p class="pos-step-title">¿Cliente del club?</p>
+      <div class="card">
+        <div class="field">
+          <label>Nombre o correo <span class="hint">(opcional)</span></label>
+          <input id="pos-search-cliente" type="text" placeholder="Ana o ana@correo.com" oninput="posBuscarCliente()">
+        </div>
+        <div id="pos-search-results" class="search-results"></div>
+        <div id="pos-cliente-seleccionado" class="pos-cliente-sel hidden">
+          <p id="pos-cliente-sel-nombre" class="pos-name"></p>
+          <p id="pos-cliente-sel-correo" class="prof-sub"></p>
+          <button class="btn-primary" onclick="posConfirmarConCliente()">✔ Confirmar con este cliente</button>
+        </div>
+        <button class="btn-ghost" onclick="posConfirmarSinCliente()" style="margin-top:.75rem">Facturar sin cliente</button>
+      </div>
+    </div>
+
+    <!-- CONFIRMACIÓN + RESUMEN DÍA -->
+    <div id="pos-step-ok" class="pos-step hidden">
+      <div class="card pos-ok-card">
+        <p class="pos-ok-emoji">🦋</p>
+        <p class="pos-ok-title">¡Venta registrada!</p>
+        <p id="pos-ok-resumen" class="pos-ok-sub"></p>
+      </div>
+      <div class="card pos-resumen-dia">
+        <h3>Ventas de hoy</h3>
+        <div class="summary-grid">
+          <div><p id="dia-ventas" class="sum-num">-</p><p>ventas</p></div>
+          <div><p id="dia-total" class="sum-num">-</p><p>total</p></div>
+          <div><p id="dia-pts" class="sum-num">-</p><p>puntos</p></div>
+        </div>
+        <div style="margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--border)">
+          <p style="font-size:.75rem;color:var(--text-lt);text-transform:uppercase;letter-spacing:.5px">Más vendido hoy</p>
+          <p id="dia-top" style="font-family:'Playfair Display',serif;color:var(--cafe);font-size:1.1rem;margin-top:.2rem">-</p>
+        </div>
+      </div>
+      <div style="padding:0 1rem 1rem">
+        <button class="btn-primary" onclick="posReset()">Nueva venta</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── LOADING OVERLAY ─────────────────────────────────────── -->
+<div id="loading-overlay" class="loading-overlay hidden">
+  <div class="butterfly spin">🦋</div>
+</div>
+
+<script>window.POS_MODE = true;</script>
+<script src="app.js"></script>
+</body>
+</html>
