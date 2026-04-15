@@ -40,7 +40,8 @@ async function pinSubmit() {
     updatePinDots();
     return;
   }
-  state.posPin = pinValue;
+  state.posPin      = pinValue;
+  state.adminNombre = res.nombre || "";
   // Mostrar botones de destino
   document.getElementById("pin-destino").classList.remove("hidden");
 }
@@ -52,8 +53,18 @@ async function pinIrA(destino) {
   } else {
     state.adminPass = POS_PIN_CLIENT;
     showScreen("admin");
+    mostrarSaludoAdmin();
     await loadAdminSummary();
   }
+}
+
+function mostrarSaludoAdmin() {
+  const nombre = state.adminNombre
+    ? state.adminNombre.charAt(0).toUpperCase() + state.adminNombre.slice(1).toLowerCase()
+    : "Admin";
+  const hora = new Date().getHours();
+  const saludo = hora < 12 ? "Buenos días" : hora < 18 ? "Buenas tardes" : "Buenas noches";
+  document.getElementById("admin-saludo").textContent = saludo + ", " + nombre + " — todo listo para hoy 🦋";
 }
 
 const POS_PIN_CLIENT = "__pin__"; // marcador interno
@@ -156,7 +167,10 @@ function showErr(el, msg) { el.textContent = msg; el.classList.remove("hidden");
 function hideErr(el) { el.classList.add("hidden"); }
 
 // ── Loading ───────────────────────────────────────────────────
-window.addEventListener("load", () => setTimeout(() => showScreen("login"), 800));
+window.addEventListener("load", () => setTimeout(() => {
+  mostrarVistaInvitado();
+  iniciarTimerRegistro();
+}, 800));
 
 let loadingEl;
 function showLoading() {
@@ -169,6 +183,104 @@ function showLoading() {
   loadingEl.style.display = "flex";
 }
 function hideLoading() { if (loadingEl) loadingEl.style.display = "none"; }
+
+// ════════════════════════════════════════════════════════════
+//  MODO INVITADO + MODALES DE REGISTRO
+// ════════════════════════════════════════════════════════════
+
+function mostrarVistaInvitado() {
+  document.getElementById("prof-nombre").textContent = "Hola, vecino 🦋";
+  document.getElementById("prof-correo").textContent  = getFraseDelDia();
+  document.getElementById("prof-nivel-badge").textContent = "🌿 Vecino";
+  document.getElementById("prof-puntos").textContent  = "—";
+  document.getElementById("btn-redeem-pts").disabled  = true;
+  document.getElementById("perfil-incompleto-banner").classList.add("hidden");
+  document.getElementById("flash-banner").classList.add("hidden");
+  const estadoEl = document.getElementById("estado-tienda");
+  if (estadoEl) {
+    const ab = calcularEstadoTienda();
+    estadoEl.textContent = ab ? "● Abierto" : "● Cerrado";
+    estadoEl.className   = "estado-pill " + (ab ? "abierto" : "cerrado");
+  }
+  showScreen("profile");
+  loadMusica();
+}
+
+// Timer: muestra el popup de registro al minuto
+let _registroTimer = null;
+function iniciarTimerRegistro() {
+  clearTimeout(_registroTimer);
+  _registroTimer = setTimeout(() => { if (!state.correo) abrirModalRegistro(); }, 60000);
+}
+
+function abrirModalRegistro() {
+  clearTimeout(_registroTimer);
+  document.getElementById("modal-registro").classList.remove("hidden");
+  setTimeout(() => document.getElementById("modal-correo-input")?.focus(), 120);
+}
+function cerrarModalRegistro() {
+  document.getElementById("modal-registro").classList.add("hidden");
+  // Si cierra sin registrarse, vuelve a preguntar en 3 min
+  if (!state.correo) _registroTimer = setTimeout(() => { if (!state.correo) abrirModalRegistro(); }, 180000);
+}
+function cerrarModalBloqueado() {
+  document.getElementById("modal-bloqueado").classList.add("hidden");
+}
+function abrirRegistroDesdeBloqueo() {
+  cerrarModalBloqueado();
+  abrirModalRegistro();
+}
+
+// Guarda acción bloqueada y muestra modal de registro
+function requireAuth(accion = "hacer esto") {
+  if (state.correo) return true;
+  document.getElementById("modal-bloqueado-accion").textContent = accion;
+  document.getElementById("modal-bloqueado").classList.remove("hidden");
+  return false;
+}
+
+// Submit del modal de correo
+async function modalContinuarRegistro() {
+  const correo = document.getElementById("modal-correo-input").value.trim().toLowerCase();
+  const errEl  = document.getElementById("modal-correo-error");
+  hideErr(errEl);
+  if (!correo || !correo.includes("@")) { showErr(errEl, "Ingresa un correo válido"); return; }
+
+  showLoading();
+  const res = await api("iniciar", { correo });
+  hideLoading();
+  if (!res.ok) { showErr(errEl, res.error); return; }
+
+  state.correo = correo;
+  document.getElementById("modal-registro").classList.add("hidden");
+
+  if (res.paso >= 4) {
+    // Usuario completo → pedir cédula
+    document.getElementById("modal-cedula").classList.remove("hidden");
+    setTimeout(() => document.getElementById("modal-cedula-input")?.focus(), 120);
+    return;
+  }
+  // Nuevo o incompleto → onboarding / perfil directo
+  await loadAndShowProfile();
+}
+
+// Submit del modal de cédula (usuarios existentes)
+async function modalLoginCedula() {
+  const cedula = document.getElementById("modal-cedula-input").value.trim();
+  const errEl  = document.getElementById("modal-cedula-error");
+  hideErr(errEl);
+  if (!cedula) { showErr(errEl, "Ingresa tu cédula"); return; }
+
+  showLoading();
+  const res = await api("login", { correo: state.correo, cedula });
+  hideLoading();
+  if (!res.ok) { showErr(errEl, res.error); return; }
+
+  document.getElementById("modal-cedula").classList.add("hidden");
+  state.profile = res;
+  renderProfile(res);
+  showScreen("profile");
+}
 
 // ════════════════════════════════════════════════════════════
 //  FLUJO CLIENTE
@@ -446,6 +558,7 @@ function selTiempo(btn, val) {
 }
 
 async function enviarReserva() {
+  if (!requireAuth("reservar tu rollito")) return;
   const errEl = document.getElementById("reserva-error");
   errEl.classList.add("hidden");
   if (!reservaState.sabor) { errEl.textContent = "Elige un sabor"; errEl.classList.remove("hidden"); return; }
@@ -484,6 +597,7 @@ function compartirApp() {
 
 // ── TALLER ────────────────────────────────────────────────────
 async function alertarTaller() {
+  if (!requireAuth("apartar cupo en el taller")) return;
   showLoading();
   const res = await api("alertaTaller", { correo: state.correo });
   hideLoading();
@@ -529,6 +643,7 @@ function renderMusicaWall(canciones) {
 }
 
 async function sugerirCancion() {
+  if (!requireAuth("sugerir canciones")) return;
   const input = document.getElementById("musica-input");
   const cancion = input.value.trim();
   if (!cancion) return;
@@ -542,6 +657,7 @@ async function sugerirCancion() {
 }
 
 async function votarCancion(id) {
+  if (!requireAuth("votar canciones")) return;
   showLoading();
   const res = await api("votarCancion", { id, correo: state.correo });
   hideLoading();
@@ -551,6 +667,7 @@ async function votarCancion(id) {
 
 // ── REDENCIONES CLIENTE ───────────────────────────────────────
 async function redeemPoints() {
+  if (!requireAuth("canjear puntos")) return;
   showLoading();
   const res = await api("redeemPoints", { correo: state.correo });
   hideLoading();
@@ -560,6 +677,7 @@ async function redeemPoints() {
 }
 
 async function redeemCaja() {
+  if (!requireAuth("canjear la caja semanal")) return;
   showLoading();
   const res = await api("redeemCaja", { correo: state.correo });
   hideLoading();
@@ -569,6 +687,7 @@ async function redeemCaja() {
 }
 
 async function redeemCumple() {
+  if (!requireAuth("canjear tu rollito cumpleañero")) return;
   showLoading();
   const res = await api("redeemCumple", { correo: state.correo });
   hideLoading();
@@ -581,7 +700,8 @@ function logout() {
   state.correo = null;
   state.profile = null;
   if (state.flashTimerInterval) clearInterval(state.flashTimerInterval);
-  showScreen("login");
+  mostrarVistaInvitado();
+  iniciarTimerRegistro();
 }
 
 // ════════════════════════════════════════════════════════════
@@ -618,8 +738,8 @@ function adminTab(btn, tab) {
   if (tab === "resumen") loadAdminSummary();
   if (tab === "clientes") {
     document.getElementById("admin-search").value = "";
-    document.getElementById("admin-search-results").innerHTML = "";
     document.getElementById("admin-client-detail").classList.add("hidden");
+    loadAllClientes();
   }
 }
 
@@ -666,29 +786,43 @@ async function loadAdminSummary() {
   }
 }
 
-// ── BUSCAR CLIENTE ADMIN ──────────────────────────────────────
+// ── LISTA Y BÚSQUEDA DE CLIENTES ADMIN ───────────────────────
+function renderClientesList(clientes, container) {
+  container.innerHTML = "";
+  if (!clientes.length) {
+    container.innerHTML = "<p style='color:var(--text-lt);font-size:.85rem;padding:.5rem 0'>No encontramos ese vecino 🦋</p>";
+    return;
+  }
+  clientes.forEach(c => {
+    const div = document.createElement("div");
+    div.className = "search-result-item";
+    const nivelEmoji = { "Vecino": "🌿", "Habitual": "☕", "De la casa": "🌀" };
+    const emoji = nivelEmoji[c.nivel] || "🌿";
+    div.innerHTML = `<p class='result-name'>${c.nombre || "(sin nombre)"}</p>
+      <p class='result-sub'>${c.correo} · ${emoji} ${c.nivel}</p>`;
+    div.onclick = () => loadAdminClientDetail(c.correo);
+    container.appendChild(div);
+  });
+}
+
+async function loadAllClientes() {
+  const container = document.getElementById("admin-search-results");
+  container.innerHTML = "<p style='color:var(--text-lt);font-size:.82rem;padding:.5rem 0'>Cargando vecinos…</p>";
+  const res = await api("searchClient", { q: "@", adminPassword: state.adminPass || "", pin: state.posPin || "" });
+  if (!res.ok) { container.innerHTML = ""; return; }
+  renderClientesList(res.clientes, container);
+}
+
 let adminSearchTimer2 = null;
 async function adminSearchDynamic() {
   const q = document.getElementById("admin-search").value.trim();
   const container = document.getElementById("admin-search-results");
   document.getElementById("admin-client-detail").classList.add("hidden");
-  if (q.length < 2) { container.innerHTML = ""; return; }
   clearTimeout(adminSearchTimer2);
+  if (q.length < 2) { loadAllClientes(); return; }
   adminSearchTimer2 = setTimeout(async () => {
     const res = await api("searchClient", { q, adminPassword: state.adminPass || "", pin: state.posPin || "" });
-    container.innerHTML = "";
-    if (!res.ok || !res.clientes.length) {
-      container.innerHTML = "<p style='color:var(--text-lt);font-size:.85rem;padding:.5rem 0'>No encontramos ese vecino 🦋</p>";
-      return;
-    }
-    res.clientes.forEach(c => {
-      const div = document.createElement("div");
-      div.className = "search-result-item";
-      div.innerHTML = `<p class='result-name'>${c.nombre || "(sin nombre)"}</p>
-        <p class='result-sub'>${c.correo} · ${c.nivel}</p>`;
-      div.onclick = () => loadAdminClientDetail(c.correo);
-      container.appendChild(div);
-    });
+    renderClientesList(res.ok ? res.clientes : [], container);
   }, 400);
 }
 

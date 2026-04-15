@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>🦋 Club Maddre</title>
+<title>Club Maddre</title>
 
 <!-- PWA -->
 <link rel="manifest" href="manifest.json">
@@ -374,7 +374,6 @@
   <div class="admin-topbar">
     <div class="admin-topbar-left">
       <span class="admin-logo">🦋 maddre</span>
-      <span class="admin-chip">Admin</span>
     </div>
     <div class="admin-topbar-right">
       <div id="admin-status-badge" class="status-badge cerrado">● Cerrado</div>
@@ -382,6 +381,9 @@
       <button class="back-btn" onclick="showScreen('pin');pinReset()">Salir</button>
     </div>
   </div>
+
+  <!-- Saludo admin -->
+  <div id="admin-saludo" class="admin-saludo"></div>
 
   <!-- Nav tabs -->
   <div class="admin-nav">
@@ -693,6 +695,6 @@ function checkHash() {
 window.addEventListener("hashchange", checkHash);
 window.addEventListener("load", checkHash);
 </script>
-<script src="app.js"></script>
+<script src="app.js?v=3"></script>
 </body>
 </html>

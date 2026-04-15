@@ -1076,6 +1076,14 @@ html, body {
   box-shadow: 0 2px 12px rgba(74,46,26,0.25);
 }
 .admin-topbar-left { display: flex; align-items: center; gap: .5rem; }
+.admin-saludo {
+  background: rgba(74,46,26,.06);
+  padding: .6rem 1rem;
+  font-size: .85rem;
+  color: var(--cafe);
+  font-weight: 500;
+  border-bottom: 1px solid var(--border);
+}
 .admin-logo {
   font-family: 'Dancing Script', cursive;
   font-weight: 700;
