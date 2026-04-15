@@ -690,6 +690,44 @@ html, body {
 .musica-card .sec-title { color: #F5D98A; }
 .musica-card .sec-sub   { color: rgba(255,255,255,.5); }
 .musica-input-row { display: flex; gap: .5rem; margin: .85rem 0; }
+
+/* ── MENÚ CARD ───────────────────────────────────────────── */
+.menu-card { margin: .75rem 1rem; }
+.menu-categoria { margin-top: 1rem; }
+.menu-categoria:first-of-type { margin-top: .65rem; }
+.menu-cat-title {
+  font-family: 'Playfair Display', serif;
+  font-size: .95rem;
+  color: var(--cafe);
+  font-weight: 700;
+  margin-bottom: .35rem;
+}
+.menu-items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: .22rem;
+}
+.menu-items li {
+  font-size: .87rem;
+  color: var(--text-lt);
+  padding-left: .85rem;
+  position: relative;
+  line-height: 1.5;
+}
+.menu-items li::before {
+  content: "·";
+  position: absolute;
+  left: 0;
+  color: var(--cafe);
+  font-weight: 700;
+}
+.menu-categoria + .menu-categoria {
+  padding-top: .85rem;
+  border-top: 1px solid var(--border);
+}
 .musica-input {
   flex: 1;
   padding: .7rem 1rem;
