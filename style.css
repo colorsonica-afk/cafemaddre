@@ -858,6 +858,12 @@ html, body {
   transition: background .2s, color .2s;
 }
 .share-app-btn:active { background: var(--cafe); color: var(--white); }
+.instalar-btn {
+  margin-top: .5rem;
+  border-color: var(--verde);
+  color: var(--verde);
+}
+.instalar-btn:active { background: var(--verde); color: var(--white); }
 
 .footer-cafe {
   text-align: center;

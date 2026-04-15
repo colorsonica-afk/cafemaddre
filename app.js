@@ -204,24 +204,32 @@ function mostrarVistaInvitado() {
   }
   showScreen("profile");
   loadMusica();
+  // Cargar sabores para la reserva aunque sea invitado
+  api("getProducts").then(r => {
+    if (r.ok && r.saboresRollito) initReservaSabores(r.saboresRollito);
+  });
 }
 
 // Timer: muestra el popup de registro al minuto
 let _registroTimer = null;
+function enPerfilInvitado() {
+  return !state.correo && document.getElementById("screen-profile")?.classList.contains("active");
+}
 function iniciarTimerRegistro() {
   clearTimeout(_registroTimer);
-  _registroTimer = setTimeout(() => { if (!state.correo) abrirModalRegistro(); }, 60000);
+  _registroTimer = setTimeout(() => { if (enPerfilInvitado()) abrirModalRegistro(); }, 60000);
 }
 
 function abrirModalRegistro() {
   clearTimeout(_registroTimer);
+  if (!enPerfilInvitado()) return;
   document.getElementById("modal-registro").classList.remove("hidden");
   setTimeout(() => document.getElementById("modal-correo-input")?.focus(), 120);
 }
 function cerrarModalRegistro() {
   document.getElementById("modal-registro").classList.add("hidden");
   // Si cierra sin registrarse, vuelve a preguntar en 3 min
-  if (!state.correo) _registroTimer = setTimeout(() => { if (!state.correo) abrirModalRegistro(); }, 180000);
+  if (!state.correo) _registroTimer = setTimeout(() => { if (enPerfilInvitado()) abrirModalRegistro(); }, 180000);
 }
 function cerrarModalBloqueado() {
   document.getElementById("modal-bloqueado").classList.add("hidden");
@@ -580,6 +588,33 @@ async function enviarReserva() {
   document.getElementById("reserva-qty").textContent = 1;
   document.querySelectorAll(".sabor-chip").forEach(b => b.classList.remove("sel"));
   document.querySelectorAll(".t-btn").forEach(b => b.classList.remove("sel"));
+}
+
+// ── INSTALAR PWA ──────────────────────────────────────────────
+let _pwaPrompt = null;
+
+window.addEventListener("beforeinstallprompt", e => {
+  e.preventDefault();
+  _pwaPrompt = e;
+  const btn = document.getElementById("btn-instalar-app");
+  if (btn) btn.classList.remove("hidden");
+});
+
+window.addEventListener("appinstalled", () => {
+  const btn = document.getElementById("btn-instalar-app");
+  if (btn) btn.classList.add("hidden");
+  _pwaPrompt = null;
+});
+
+async function instalarApp() {
+  if (_pwaPrompt) {
+    _pwaPrompt.prompt();
+    const { outcome } = await _pwaPrompt.userChoice;
+    if (outcome === "accepted") _pwaPrompt = null;
+  } else {
+    // iOS: no soporta prompt nativo, mostrar instrucciones
+    toast("En iPhone: toca Compartir → 'Añadir a inicio' 🦋", 5000);
+  }
 }
 
 // ── COMPARTIR APP ─────────────────────────────────────────────
