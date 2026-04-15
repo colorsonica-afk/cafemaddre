@@ -869,6 +869,78 @@ html, body {
   font-family: 'Playfair Display', serif;
 }
 
+/* ── MODALES ─────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20,10,5,.65);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: modalFadeIn .2s ease;
+}
+.modal-overlay.hidden { display: none; }
+
+.modal-box {
+  background: var(--crema);
+  border-radius: var(--radius) var(--radius) 0 0;
+  padding: 2rem 1.5rem 2rem;
+  width: 100%;
+  max-width: 480px;
+  position: relative;
+  animation: modalSlideUp .28s cubic-bezier(.32,1,.46,1);
+}
+
+.modal-close-btn {
+  position: absolute;
+  top: .9rem; right: 1rem;
+  background: none; border: none;
+  font-size: 1rem; color: var(--text-lt);
+  cursor: pointer; padding: .3rem .5rem;
+  line-height: 1;
+}
+.modal-brand-row {
+  display: flex; align-items: center; gap: .35rem;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+.modal-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.35rem;
+  color: var(--cafe);
+  text-align: center;
+  margin-bottom: .4rem;
+}
+.modal-sub {
+  font-size: .87rem;
+  color: var(--text-lt);
+  text-align: center;
+  line-height: 1.55;
+  margin-bottom: 1.25rem;
+}
+.modal-lock-emoji {
+  font-size: 2.4rem;
+  text-align: center;
+  margin-bottom: .75rem;
+}
+.modal-ahora-no {
+  display: block;
+  width: 100%;
+  text-align: center;
+  margin-top: .85rem;
+  font-size: .82rem;
+  color: var(--text-lt);
+  background: none; border: none;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  text-decoration: underline;
+}
+@keyframes modalFadeIn  { from { opacity:0 } to { opacity:1 } }
+@keyframes modalSlideUp { from { transform:translateY(40px);opacity:0 } to { transform:translateY(0);opacity:1 } }
+
 /* ── TOAST ───────────────────────────────────────────────── */
 .toast {
   position: fixed;
