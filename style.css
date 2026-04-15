@@ -1494,6 +1494,17 @@ html, body {
   gap: .75rem;
   padding: 1rem;
 }
+.admin-stats-grid > .admin-stat:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  text-align: left;
+}
+.admin-stats-grid > .admin-stat:last-child:nth-child(odd) .as-icon { font-size: 1.8rem; }
+.admin-stats-grid > .admin-stat:last-child:nth-child(odd) .as-num  { font-size: 2rem; margin: 0; }
+.admin-stats-grid > .admin-stat:last-child:nth-child(odd) .as-lbl  { margin: 0; }
 .admin-stat {
   background: var(--white);
   border: 1px solid var(--border);

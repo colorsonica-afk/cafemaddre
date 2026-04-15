@@ -6,7 +6,10 @@ let pinValue = "";
 function pinReset() {
   pinValue = "";
   updatePinDots();
-  document.getElementById("pin-error").classList.add("hidden");
+  const errEl = document.getElementById("pin-error");
+  if (errEl) errEl.classList.add("hidden");
+  sessionStorage.removeItem("maddre_pos_pin");
+  sessionStorage.removeItem("maddre_pos_nombre");
 }
 
 function pinPress(digit) {
@@ -42,6 +45,8 @@ async function pinSubmit() {
   }
   state.posPin      = pinValue;
   state.adminNombre = res.nombre || "";
+  sessionStorage.setItem("maddre_pos_pin",    pinValue);
+  sessionStorage.setItem("maddre_pos_nombre", res.nombre || "");
   // Mostrar botones de destino
   document.getElementById("pin-destino").classList.remove("hidden");
 }
@@ -179,7 +184,16 @@ function hideErr(el) { el.classList.add("hidden"); }
 // ── Loading ───────────────────────────────────────────────────
 window.addEventListener("load", () => setTimeout(() => {
   if (window.POS_MODE) {
-    showScreen("pin");
+    const savedPin    = sessionStorage.getItem("maddre_pos_pin");
+    const savedNombre = sessionStorage.getItem("maddre_pos_nombre");
+    if (savedPin) {
+      state.posPin      = savedPin;
+      state.adminNombre = savedNombre || "";
+      showScreen("pos");
+      initPOS();
+    } else {
+      showScreen("pin");
+    }
     return;
   }
   // Llegó desde pos.html con PIN ya verificado → entrar directo al admin
@@ -1535,8 +1549,19 @@ function posReset() {
   posState = { sector: null, items: [], qty: 1, config: posState.config };
   if (posState.config) {
     posShowStep("sector");
+  } else if (window.POS_MODE) {
+    showScreen("pin");
   } else {
     showScreen("admin-login");
+  }
+}
+
+function posIrAdmin() {
+  if (window.POS_MODE) {
+    sessionStorage.setItem("pos_pin_verified", state.posPin || "1");
+    window.location.href = "index.html#admin";
+  } else {
+    showScreen("admin");
   }
 }
 
