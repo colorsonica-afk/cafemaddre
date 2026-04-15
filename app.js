@@ -57,6 +57,7 @@ async function pinIrA(destino) {
   } else {
     // admin
     if (window.POS_MODE) {
+      sessionStorage.setItem("pos_pin_verified", state.posPin || "1");
       window.location.href = "index.html#admin";
     } else {
       state.adminPass = POS_PIN_CLIENT;
@@ -181,9 +182,22 @@ window.addEventListener("load", () => setTimeout(() => {
     showScreen("pin");
     return;
   }
-  // Llegó desde pos.html pidiendo el panel admin
+  // Llegó desde pos.html con PIN ya verificado → entrar directo al admin
+  if (window.location.hash === "#admin" && sessionStorage.getItem("pos_pin_verified")) {
+    history.replaceState(null, "", window.location.pathname);
+    state.posPin   = sessionStorage.getItem("pos_pin_verified");
+    state.adminPass = POS_PIN_CLIENT;
+    sessionStorage.removeItem("pos_pin_verified");
+    showScreen("admin");
+    mostrarSaludoAdmin();
+    loadAdminSummary();
+    initPullToRefresh();
+    return;
+  }
+  // Llegó a admin-login sin PIN verificado (acceso directo desde club)
   if (window.location.hash === "#admin") {
     history.replaceState(null, "", window.location.pathname);
+    sessionStorage.setItem("admin_desde_pos", "1");
     showScreen("admin-login");
     return;
   }
@@ -1009,6 +1023,17 @@ function logout() {
 // ════════════════════════════════════════════════════════════
 
 function showAdminLogin() { showScreen("admin-login"); }
+
+function adminLoginVolver() {
+  // Si llegamos desde pos.html (via #admin), volver a pos
+  // Si llegamos desde el club, volver al login
+  if (document.referrer.includes("pos.html") || sessionStorage.getItem("admin_desde_pos")) {
+    sessionStorage.removeItem("admin_desde_pos");
+    window.location.href = "pos.html";
+  } else {
+    showScreen("login");
+  }
+}
 
 async function adminAuthAndGo(destination) {
   const pass  = document.getElementById("admin-pass-input").value;

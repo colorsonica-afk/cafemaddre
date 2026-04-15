@@ -429,17 +429,22 @@
 <!-- ── ADMIN LOGIN ─────────────────────────────────────────── -->
 <div id="screen-admin-login" class="screen">
   <div class="topbar">
-    <button class="back-btn" onclick="showScreen('login')">← Volver</button>
-    <h2>Equipo Maddre</h2>
+    <button id="admin-login-back-btn" class="back-btn" onclick="adminLoginVolver()">← Volver</button>
+    <h2>Panel Admin</h2>
   </div>
-  <div class="card" style="margin:1.5rem 1rem">
+  <div style="padding:1.5rem 1rem .5rem">
+    <p style="font-size:.82rem;color:var(--text-lt);text-align:center;line-height:1.5">
+      Ingresa la contraseña de administrador<br>para acceder al panel de gestión
+    </p>
+  </div>
+  <div class="card" style="margin:.5rem 1rem">
     <div class="field">
       <label>Contraseña admin</label>
-      <input id="admin-pass-input" type="password" placeholder="••••••••">
+      <input id="admin-pass-input" type="password" placeholder="••••••••" autocomplete="current-password">
     </div>
     <div id="admin-login-error" class="error-msg hidden"></div>
-    <button class="btn-primary" onclick="adminAuthAndGo('admin')">Panel Admin</button>
-    <button id="admin-login-btn-pos" class="btn-ghost" onclick="window.location.href='pos.html'">Ir a Caja 🦋</button>
+    <button class="btn-primary" onclick="adminAuthAndGo('admin')">Entrar al panel →</button>
+    <button id="admin-login-btn-pos" class="btn-ghost" onclick="window.location.href='pos.html'" style="margin-top:.5rem">← Volver a la caja</button>
   </div>
 </div>
 
