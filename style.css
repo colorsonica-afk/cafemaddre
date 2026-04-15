@@ -846,6 +846,56 @@ html, body {
 .trueque-sabado-num  { font-family: 'Playfair Display', serif; font-size: 2rem; color: #F5D98A; line-height: 1; }
 .trueque-sabado-label { font-size: .7rem; color: rgba(255,255,255,.4); margin-top: .15rem; }
 
+/* ── PULL TO REFRESH ────────────────────────────────────── */
+.ptr-indicator {
+  position: fixed;
+  top: 0; left: 50%;
+  transform: translateX(-50%) translateY(-60px);
+  opacity: 0;
+  z-index: 200;
+  font-size: 1.5rem;
+  background: var(--cafe);
+  border-radius: 0 0 16px 16px;
+  padding: 6px 18px 10px;
+  pointer-events: none;
+  box-shadow: 0 4px 16px rgba(74,46,26,0.25);
+  line-height: 1;
+}
+.ptr-indicator.ptr-spin {
+  animation: ptr-spin .7s linear infinite;
+}
+@keyframes ptr-spin {
+  from { transform: translateX(-50%) translateY(8px) rotate(0deg); }
+  to   { transform: translateX(-50%) translateY(8px) rotate(360deg); }
+}
+
+/* ── SEC TITLE ROW + REFRESH BTN ─────────────────────────── */
+.sec-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0;
+}
+.sec-title-row .sec-title { margin-bottom: 0; }
+.sec-refresh-btn {
+  flex-shrink: 0;
+  background: none;
+  border: 1.5px solid var(--border);
+  color: var(--text-lt);
+  border-radius: 50%;
+  width: 28px; height: 28px;
+  font-size: 1rem; line-height: 1;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform .35s ease, color .2s;
+  padding: 0;
+}
+.sec-refresh-btn:active {
+  transform: rotate(180deg);
+  color: var(--cafe);
+  border-color: var(--cafe);
+}
+
 /* ── ARCADE ENTRY CARD ───────────────────────────────────── */
 .arcade-entry-card {
   display: flex;

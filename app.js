@@ -170,6 +170,8 @@ function hideErr(el) { el.classList.add("hidden"); }
 window.addEventListener("load", () => setTimeout(() => {
   mostrarVistaInvitado();
   iniciarTimerRegistro();
+  initMoodChips();
+  initPullToRefresh();
 }, 800));
 
 let loadingEl;
@@ -652,6 +654,62 @@ async function alertarTaller() {
   toast(res.ok ? "🎨 ¡Listo! Te contactamos para confirmar tu cupo" : "❌ " + res.error);
 }
 
+// ── PULL TO REFRESH ───────────────────────────────────────────
+function initPullToRefresh() {
+  const screen = document.getElementById("screen-profile");
+  const ind    = document.getElementById("ptr-indicator");
+  if (!screen || !ind) return;
+
+  let startY = 0, active = false;
+  const THRESHOLD = 72;
+
+  function setPtr(dy) {
+    const pull = Math.min(dy * 0.45, 52);
+    const pct  = Math.min(dy / THRESHOLD, 1);
+    ind.style.transform = `translateX(-50%) translateY(${pull - 60}px)`;
+    ind.style.opacity   = String(pct);
+  }
+
+  function resetPtr() {
+    ind.classList.remove("ptr-spin");
+    ind.style.transition = "transform .22s ease, opacity .22s ease";
+    ind.style.transform  = "translateX(-50%) translateY(-60px)";
+    ind.style.opacity    = "0";
+    setTimeout(() => { ind.style.transition = ""; }, 220);
+  }
+
+  screen.addEventListener("touchstart", e => {
+    if (screen.scrollTop <= 1) {
+      startY = e.touches[0].clientY;
+      active = true;
+    }
+  }, { passive: true });
+
+  screen.addEventListener("touchmove", e => {
+    if (!active) return;
+    const dy = e.touches[0].clientY - startY;
+    if (dy <= 0) { active = false; resetPtr(); return; }
+    setPtr(dy);
+  }, { passive: true });
+
+  screen.addEventListener("touchend", e => {
+    if (!active) return;
+    active = false;
+    const dy = e.changedTouches[0].clientY - startY;
+    if (dy >= THRESHOLD) {
+      ind.style.transform = "translateX(-50%) translateY(8px)";
+      ind.style.opacity   = "1";
+      ind.classList.add("ptr-spin");
+      const job = state.correo
+        ? loadProfile()
+        : Promise.allSettled([loadMusica(), loadTrueque()]);
+      job.finally ? job.finally(resetPtr) : (job, setTimeout(resetPtr, 1200));
+    } else {
+      resetPtr();
+    }
+  }, { passive: true });
+}
+
 // ── TRUEQUE DE LIBROS ─────────────────────────────────────────
 let _moodSeleccionado = "para llorar";
 
@@ -993,6 +1051,35 @@ function renderClientesList(clientes, container) {
     div.onclick = () => loadAdminClientDetail(c.correo);
     container.appendChild(div);
   });
+}
+
+async function adminAgregarCliente() {
+  const input  = document.getElementById("admin-nuevo-correo");
+  const msgEl  = document.getElementById("admin-nuevo-msg");
+  const correo = input.value.trim().toLowerCase();
+  msgEl.classList.add("hidden");
+  if (!correo || !correo.includes("@")) {
+    msgEl.textContent = "❌ Correo inválido";
+    msgEl.style.color = "var(--flash)";
+    msgEl.classList.remove("hidden");
+    return;
+  }
+  showLoading();
+  const res = await api("iniciar", { correo });
+  hideLoading();
+  msgEl.classList.remove("hidden");
+  if (!res.ok) {
+    msgEl.textContent = "❌ " + res.error;
+    msgEl.style.color = "var(--flash)";
+  } else if (res.esNuevo) {
+    msgEl.textContent = "✅ Vecino agregado — correo de bienvenida enviado";
+    msgEl.style.color = "var(--verde)";
+    input.value = "";
+    loadAllClientes();
+  } else {
+    msgEl.textContent = "ℹ️ Ya existe en el club (paso " + res.paso + " de 4)";
+    msgEl.style.color = "var(--text-md)";
+  }
 }
 
 async function loadAllClientes() {

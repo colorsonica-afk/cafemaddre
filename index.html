@@ -127,6 +127,9 @@
 <!-- ── PERFIL CLIENTE ─────────────────────────────────────── -->
 <div id="screen-profile" class="screen">
 
+  <!-- Pull-to-refresh indicator -->
+  <div id="ptr-indicator" class="ptr-indicator" aria-hidden="true">🦋</div>
+
   <!-- Barra progreso perfil -->
   <div id="perfil-incompleto-banner" class="completar-card hidden">
     <div class="completar-top">
@@ -276,7 +279,10 @@
 
   <!-- Música -->
   <div class="card musica-card">
-    <p class="sec-title">¿Qué suena hoy? 🎶</p>
+    <div class="sec-title-row">
+      <p class="sec-title">¿Qué suena hoy? 🎶</p>
+      <button class="sec-refresh-btn" onclick="loadMusica()" title="Actualizar">↻</button>
+    </div>
     <p class="sec-sub">Sugiere una canción y que los vecinos decidan</p>
     <div class="musica-input-row">
       <input id="musica-input" type="text" placeholder="Artista · Canción" class="musica-input">
@@ -287,7 +293,10 @@
 
   <!-- Trueque de Libros -->
   <div class="card trueque-card">
-    <p class="sec-title">Trueque de libros 📚</p>
+    <div class="sec-title-row">
+      <p class="sec-title">Trueque de libros 📚</p>
+      <button class="sec-refresh-btn" onclick="loadTrueque()" title="Actualizar">↻</button>
+    </div>
     <p class="sec-sub">Trae uno, llévate otro — los matches se concretan cada sábado</p>
 
     <!-- Publicar libro -->
@@ -524,7 +533,20 @@
 
   <!-- ── TAB CLIENTES ── -->
   <div id="admin-tab-clientes" class="admin-section hidden">
-    <div class="card" style="margin:1rem">
+
+    <!-- Agregar cliente nuevo -->
+    <div class="card" style="margin:1rem 1rem .5rem">
+      <p class="sec-title" style="font-size:.85rem;margin-bottom:.75rem">Agregar al club</p>
+      <div class="admin-search-wrap" style="margin-bottom:.6rem">
+        <span class="search-icon-adm">✉️</span>
+        <input id="admin-nuevo-correo" type="email" inputmode="email" placeholder="correo@ejemplo.com" autocomplete="off">
+      </div>
+      <button class="btn-primary" style="width:100%" onclick="adminAgregarCliente()">+ Agregar vecino</button>
+      <p id="admin-nuevo-msg" class="hidden" style="margin-top:.6rem;font-size:.8rem;line-height:1.4"></p>
+    </div>
+
+    <!-- Buscador -->
+    <div class="card" style="margin:.5rem 1rem 1rem">
       <div class="admin-search-wrap">
         <span class="search-icon-adm">🔍</span>
         <input id="admin-search" type="text" placeholder="Nombre o correo del vecino…" oninput="adminSearchDynamic()">

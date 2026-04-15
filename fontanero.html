@@ -126,7 +126,7 @@
         </div>
 
         <!-- Controles Táctiles -->
-        <div class="touch-controls hidden md:flex" id="touchControls">
+        <div class="touch-controls" id="touchControls" style="display:none">
             <div class="flex">
                 <button class="touch-btn" id="btnLeft">◀</button>
                 <button class="touch-btn" id="btnRight">▶</button>
@@ -164,11 +164,8 @@
         canvas.style.width = `${GAME_WIDTH * scale}px`;
         canvas.style.height = `${GAME_HEIGHT * scale}px`;
         
-        if (window.innerWidth <= 768) {
-            touchControls.classList.remove('hidden');
-        } else {
-            touchControls.classList.add('hidden');
-        }
+        const isTouchDevice = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+        touchControls.style.display = isTouchDevice ? 'flex' : 'none';
     }
     window.addEventListener('resize', resize);
     resize();
