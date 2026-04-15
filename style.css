@@ -846,6 +846,66 @@ html, body {
 .trueque-sabado-num  { font-family: 'Playfair Display', serif; font-size: 2rem; color: #F5D98A; line-height: 1; }
 .trueque-sabado-label { font-size: .7rem; color: rgba(255,255,255,.4); margin-top: .15rem; }
 
+/* ── ARCADE ENTRY CARD ───────────────────────────────────── */
+.arcade-entry-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: .75rem 1rem;
+  padding: 1.1rem 1.25rem;
+  background: #2C1A0E;
+  border-radius: 20px;
+  border: 2px solid rgba(123,198,126,0.35);
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform .12s, border-color .12s;
+  position: relative;
+  overflow: hidden;
+}
+.arcade-entry-card::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 5px, rgba(255,255,255,0.015) 5px, rgba(255,255,255,0.015) 6px),
+    repeating-linear-gradient(90deg, transparent, transparent 5px, rgba(255,255,255,0.015) 5px, rgba(255,255,255,0.015) 6px);
+  pointer-events: none;
+}
+.arcade-entry-card:active { transform: scale(0.97); border-color: rgba(123,198,126,0.7); }
+.arcade-entry-left { flex: 1; position: relative; }
+.arcade-entry-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 11px;
+  color: #E4A830;
+  margin-bottom: .45rem;
+  line-height: 1.6;
+}
+.arcade-entry-sub {
+  font-size: .75rem;
+  color: #9A7A5C;
+  margin-bottom: .65rem;
+  line-height: 1.4;
+}
+.arcade-entry-chips { display: flex; gap: .5rem; flex-wrap: wrap; }
+.arcade-chip {
+  font-size: .7rem;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+.arcade-chip.green { background: rgba(123,198,126,0.12); color: #7BC67E; border: 1px solid rgba(123,198,126,0.25); }
+.arcade-chip.blue  { background: rgba(110,198,230,0.12); color: #6EC6E6; border: 1px solid rgba(110,198,230,0.25); }
+.arcade-entry-icon {
+  font-size: 2.6rem;
+  opacity: .5;
+  margin-left: .75rem;
+  animation: arcade-float 3s ease-in-out infinite;
+  flex-shrink: 0;
+}
+@keyframes arcade-float {
+  0%,100% { transform: translateY(0); }
+  50%      { transform: translateY(-5px); }
+}
+
 /* ── MENÚ CARD ───────────────────────────────────────────── */
 .menu-card { margin: .75rem 1rem; }
 .menu-categoria { margin-top: 1rem; }

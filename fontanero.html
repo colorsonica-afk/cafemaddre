@@ -10,10 +10,27 @@
         body {
             margin: 0;
             overflow: hidden;
-            background-color: #2c1e16; /* Color café oscuro vintage */
+            background-color: #2c1e16;
             font-family: 'Press Start 2P', cursive;
-            touch-action: none; /* Evita el scroll en móviles al tocar */
+            touch-action: none;
         }
+        .back-btn {
+            position: fixed; top: 14px; left: 14px; z-index: 20;
+            background: rgba(44,30,22,0.82); border: 2px solid #8b5a2b;
+            color: #f4e4d4; font-family: 'Press Start 2P', cursive;
+            font-size: 7px; padding: 8px 12px; border-radius: 8px;
+            cursor: pointer; backdrop-filter: blur(4px);
+            box-shadow: 0 3px 0 #5c3a18;
+        }
+        .back-btn:active { transform: translateY(3px); box-shadow: none; }
+        .arcade-link-btn {
+            margin-top: 14px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 7px; padding: 9px 18px;
+            background: transparent; border: 2px solid rgba(244,228,212,0.3);
+            color: rgba(244,228,212,0.55); border-radius: 7px; cursor: pointer;
+        }
+        .arcade-link-btn:active { opacity: 0.4; }
         #game-container {
             position: relative;
             width: 100vw;
@@ -79,6 +96,8 @@
 </head>
 <body>
 
+<button class="back-btn" onclick="location.href='arcade.html'">← ARCADE</button>
+
 <div id="game-container">
     <canvas id="gameCanvas"></canvas>
 
@@ -103,6 +122,7 @@
             <button id="actionBtn" class="bg-[#8b5a2b] hover:bg-[#a66d35] text-white px-8 py-4 border-4 border-[#5c3a18] rounded shadow-[0_6px_0_#5c3a18] active:shadow-[0_0px_0_#5c3a18] active:translate-y-[6px] transition-all text-sm md:text-base">
                 JUGAR 🎮
             </button>
+            <button class="arcade-link-btn" id="backToArcadeBtn" style="display:none" onclick="location.href='arcade.html'">← VOLVER AL ARCADE</button>
         </div>
 
         <!-- Controles Táctiles -->
@@ -391,25 +411,40 @@
 
     function updateScore() { scoreDisplay.innerText = `Puntos: ${score}`; }
 
+    function guardarScore(score) {
+        const correo = localStorage.getItem('maddre_correo') || '';
+        const user   = correo ? correo.split('@')[0] : 'jugador';
+        const best   = Number(localStorage.getItem('arcade_best_fontanero')) || 0;
+        if (score > best) localStorage.setItem('arcade_best_fontanero', score);
+        const scores = JSON.parse(localStorage.getItem('arcade_scores') || '[]');
+        scores.push({ user, score, game: 'fontanero', fecha: Date.now() });
+        scores.sort((a, b) => b.score - a.score);
+        localStorage.setItem('arcade_scores', JSON.stringify(scores.slice(0, 20)));
+    }
+
     function startGame() {
         gameState = 'PLAYING';
         screens.classList.add('hidden');
+        document.getElementById('backToArcadeBtn').style.display = 'none';
         loadLevel();
     }
 
     function endGame(victory) {
         gameState = victory ? 'VICTORY' : 'GAME_OVER';
+        guardarScore(score);
         screens.classList.remove('hidden');
-        
+        document.getElementById('backToArcadeBtn').style.display = 'inline-block';
+        const best = Number(localStorage.getItem('arcade_best_fontanero')) || 0;
+
         if (victory) {
             screenTitle.innerHTML = '¡MÁS QUE LISTO! 🎉<br><span class="text-sm md:text-2xl text-[#facc15]">CAFÉ MADDRE</span>';
-            screenTitle.style.color = '#ffd700'; 
-            screenSubtitle.innerHTML = `Puntuación final: ${score}<br>¡Eres un héroe del café!`;
+            screenTitle.style.color = '#ffd700';
+            screenSubtitle.innerHTML = `Puntuación final: <b>${score}</b><br>Récord: <b>${best}</b><br>¡Eres un héroe del café!`;
             actionBtn.innerText = 'JUGAR DE NUEVO 🎮';
         } else {
             screenTitle.innerHTML = '¡BUM! 💥<br><span class="text-sm md:text-2xl text-[#facc15]">CAFÉ MADDRE</span>';
-            screenTitle.style.color = '#ff4444'; 
-            screenSubtitle.innerHTML = `Tocaste una bomba.<br>Puntuación: ${score}<br>¡Inténtalo otra vez!`;
+            screenTitle.style.color = '#ff4444';
+            screenSubtitle.innerHTML = `Tocaste una bomba.<br>Puntuación: <b>${score}</b><br>Récord: <b>${best}</b>`;
             actionBtn.innerText = 'REINTENTAR 🔄';
         }
     }
