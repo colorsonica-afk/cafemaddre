@@ -57,7 +57,7 @@ async function pinIrA(destino) {
   } else {
     // admin
     if (window.POS_MODE) {
-      window.location.href = "index.html";
+      window.location.href = "index.html#admin";
     } else {
       state.adminPass = POS_PIN_CLIENT;
       showScreen("admin");
@@ -179,6 +179,12 @@ function hideErr(el) { el.classList.add("hidden"); }
 window.addEventListener("load", () => setTimeout(() => {
   if (window.POS_MODE) {
     showScreen("pin");
+    return;
+  }
+  // Llegó desde pos.html pidiendo el panel admin
+  if (window.location.hash === "#admin") {
+    history.replaceState(null, "", window.location.pathname);
+    showScreen("admin-login");
     return;
   }
   const savedCorreo = localStorage.getItem("maddre_correo");
