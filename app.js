@@ -168,11 +168,34 @@ function hideErr(el) { el.classList.add("hidden"); }
 
 // ── Loading ───────────────────────────────────────────────────
 window.addEventListener("load", () => setTimeout(() => {
-  mostrarVistaInvitado();
-  iniciarTimerRegistro();
+  const savedCorreo = localStorage.getItem("maddre_correo");
+  if (savedCorreo) {
+    restaurarSesion(savedCorreo);
+  } else {
+    mostrarVistaInvitado();
+    iniciarTimerRegistro();
+  }
   initMoodChips();
   initPullToRefresh();
 }, 800));
+
+async function restaurarSesion(correo) {
+  state.correo = correo;
+  showLoading();
+  const res = await api("getProfile", { correo });
+  hideLoading();
+  if (!res.ok) {
+    // Sesión inválida — limpiar y mostrar como invitado
+    localStorage.removeItem("maddre_correo");
+    state.correo = null;
+    mostrarVistaInvitado();
+    iniciarTimerRegistro();
+    return;
+  }
+  state.profile = res;
+  renderProfile(res);
+  showScreen("profile");
+}
 
 let loadingEl;
 function showLoading() {
@@ -211,6 +234,7 @@ function mostrarVistaInvitado() {
   }
   showScreen("profile");
   loadMusica();
+  loadTrueque();
   // Cargar sabores para la reserva aunque sea invitado
   api("getProducts").then(r => {
     if (r.ok && r.saboresRollito) initReservaSabores(r.saboresRollito);
@@ -267,6 +291,7 @@ async function modalContinuarRegistro() {
   if (!res.ok) { showErr(errEl, res.error); return; }
 
   state.correo = correo;
+  localStorage.setItem("maddre_correo", correo);
   document.getElementById("modal-registro").classList.add("hidden");
 
   if (res.paso >= 4) {
@@ -339,6 +364,7 @@ async function doLoginConCedula() {
   hideLoading();
 
   if (!res.ok) { showErr(errEl, res.error); return; }
+  localStorage.setItem("maddre_correo", state.correo);
   state.profile = res;
   renderProfile(res);
   showScreen("profile");
@@ -402,6 +428,7 @@ async function loadAndShowProfile() {
   const res = await api("getProfile", { correo: state.correo });
   hideLoading();
   if (!res.ok) { toast("Error: " + res.error); return; }
+  localStorage.setItem("maddre_correo", state.correo);
   state.profile = res;
   renderProfile(res);
   showScreen("profile");
@@ -656,20 +683,30 @@ async function alertarTaller() {
 
 // ── PULL TO REFRESH ───────────────────────────────────────────
 function initPullToRefresh() {
-  const screen = document.getElementById("screen-profile");
-  const ind    = document.getElementById("ptr-indicator");
-  if (!screen || !ind) return;
+  _wirePTR(
+    document.getElementById("screen-profile"),
+    document.getElementById("ptr-indicator"),
+    () => state.correo
+      ? loadProfile()
+      : Promise.allSettled([loadMusica(), loadTrueque()])
+  );
+  _wirePTR(
+    document.getElementById("screen-admin"),
+    document.getElementById("ptr-indicator-admin"),
+    () => loadAdminSummary()
+  );
+}
 
+function _wirePTR(screen, ind, refreshFn) {
+  if (!screen || !ind) return;
   let startY = 0, active = false;
   const THRESHOLD = 72;
 
   function setPtr(dy) {
     const pull = Math.min(dy * 0.45, 52);
-    const pct  = Math.min(dy / THRESHOLD, 1);
     ind.style.transform = `translateX(-50%) translateY(${pull - 60}px)`;
-    ind.style.opacity   = String(pct);
+    ind.style.opacity   = String(Math.min(dy / THRESHOLD, 1));
   }
-
   function resetPtr() {
     ind.classList.remove("ptr-spin");
     ind.style.transition = "transform .22s ease, opacity .22s ease";
@@ -679,10 +716,7 @@ function initPullToRefresh() {
   }
 
   screen.addEventListener("touchstart", e => {
-    if (screen.scrollTop <= 1) {
-      startY = e.touches[0].clientY;
-      active = true;
-    }
+    if (screen.scrollTop <= 1) { startY = e.touches[0].clientY; active = true; }
   }, { passive: true });
 
   screen.addEventListener("touchmove", e => {
@@ -700,10 +734,8 @@ function initPullToRefresh() {
       ind.style.transform = "translateX(-50%) translateY(8px)";
       ind.style.opacity   = "1";
       ind.classList.add("ptr-spin");
-      const job = state.correo
-        ? loadProfile()
-        : Promise.allSettled([loadMusica(), loadTrueque()]);
-      job.finally ? job.finally(resetPtr) : (job, setTimeout(resetPtr, 1200));
+      const job = refreshFn();
+      (job && job.finally) ? job.finally(resetPtr) : setTimeout(resetPtr, 1200);
     } else {
       resetPtr();
     }
@@ -947,6 +979,7 @@ async function redeemCumple() {
 function logout() {
   state.correo = null;
   state.profile = null;
+  localStorage.removeItem("maddre_correo");
   if (state.flashTimerInterval) clearInterval(state.flashTimerInterval);
   mostrarVistaInvitado();
   iniciarTimerRegistro();
