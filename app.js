@@ -574,25 +574,34 @@ function renderProfile(res) {
 }
 
 function renderPromos(promos, cliente) {
-  const btnCaja = document.getElementById("btn-caja");
-  btnCaja.disabled = !promos.cajaSemanalDisponible;
-  btnCaja.textContent = promos.cajaSemanalDisponible ? "Canjear" : "Ya canjeada ✓";
+  // ── Caja semanal ─────────────────────────────────────────
+  const cajaCard = document.getElementById("promo-caja-card");
+  const btnCaja  = document.getElementById("btn-caja");
+  const cajaDesc = document.getElementById("caja-desc");
+  if (cajaCard) cajaCard.style.display = promos.cajaSemanalActiva === false ? "none" : "";
+  if (cajaDesc) cajaDesc.textContent = promos.cajaSemanalDesc || "4 rollitos por $20.000";
+  if (btnCaja) {
+    btnCaja.disabled    = !promos.cajaSemanalDisponible;
+    btnCaja.textContent = promos.cajaSemanalDisponible ? "Canjear" : "Ya canjeada ✓";
+  }
 
+  // ── Cumpleaños ───────────────────────────────────────────
+  const cumpleCard = document.getElementById("promo-cumple-card");
   const btnCumple  = document.getElementById("btn-cumple");
   const cumpleDesc = document.getElementById("cumple-desc");
-  if (promos.cumpleDisponible) {
-    btnCumple.disabled = false;
-    cumpleDesc.textContent = "🎂 ¡Feliz cumpleaños! Rollito gratis hoy";
-  } else if (promos.esDiaCumple === false && promos.esMesCumple) {
-    btnCumple.disabled = true;
-    cumpleDesc.textContent = "Solo disponible el día exacto de tu cumpleaños";
-  } else if (promos.mesesParaCumple !== null && promos.mesesParaCumple > 0) {
-    btnCumple.disabled = true;
-    cumpleDesc.textContent = `Tu cumpleaños llega en ${promos.mesesParaCumple} mes(es)`;
-  } else {
-    btnCumple.disabled = true;
-    cumpleDesc.textContent = "Solo el día de tu cumpleaños";
+  if (cumpleCard) cumpleCard.style.display = promos.cumpleActivo === false ? "none" : "";
+  if (cumpleDesc) {
+    if (promos.cumpleDisponible) {
+      cumpleDesc.textContent = promos.cumpleDesc || "🎂 ¡Rollito gratis hoy!";
+    } else if (promos.esMesCumple) {
+      cumpleDesc.textContent = "Solo disponible el día exacto de tu cumpleaños";
+    } else if (promos.mesesParaCumple > 0) {
+      cumpleDesc.textContent = `Tu cumpleaños llega en ${promos.mesesParaCumple} mes(es)`;
+    } else {
+      cumpleDesc.textContent = promos.cumpleDesc || "Solo el día de tu cumpleaños";
+    }
   }
+  if (btnCumple) btnCumple.disabled = !promos.cumpleDisponible;
 }
 
 function calcularEstadoTienda() {
@@ -1016,7 +1025,8 @@ async function redeemCaja() {
   const res = await api("redeemCaja", { correo: state.correo });
   hideLoading();
   if (!res.ok) { toast("❌ " + res.error); return; }
-  toast("📦 ¡Caja semanal canjeada! 4 rollitos por $20.000");
+  const desc = state.profile?.promos?.cajaSemanalDesc || "4 rollitos por $20.000";
+  toast("📦 ¡Caja semanal canjeada! " + desc);
   loadProfile();
 }
 
