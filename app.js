@@ -186,7 +186,14 @@ window.addEventListener("load", () => setTimeout(() => {
   if (window.POS_MODE) {
     const savedPin    = sessionStorage.getItem("maddre_pos_pin");
     const savedNombre = sessionStorage.getItem("maddre_pos_nombre");
-    if (savedPin) {
+    const bypass      = sessionStorage.getItem("maddre_pos_bypass");
+    if (bypass) {
+      sessionStorage.removeItem("maddre_pos_bypass");
+      state.adminPass   = bypass;
+      state.adminNombre = "Admin";
+      showScreen("pos");
+      initPOS();
+    } else if (savedPin) {
       state.posPin      = savedPin;
       state.adminNombre = savedNombre || "";
       showScreen("pos");
@@ -1367,13 +1374,13 @@ function renderProductoSelect(productos) {
 }
 
 function posProductoChange() {
-  const sel   = document.getElementById("pos-sel-producto");
-  const nombre = sel.value.toUpperCase();
+  const sel     = document.getElementById("pos-sel-producto");
+  const nombre  = sel.value.toUpperCase();
   const varWrap = document.getElementById("pos-variedad-wrap");
-  const varSel  = document.getElementById("pos-sel-variedad");
+  const chipsEl = document.getElementById("pos-variedad-chips");
 
   varWrap.classList.add("hidden");
-  varSel.innerHTML = '<option value="">— selecciona —</option>';
+  chipsEl.innerHTML = "";
 
   let sabores = [];
   if (nombre.includes("ROLLITO")) sabores = posState.config.saboresRollito || [];
@@ -1381,9 +1388,13 @@ function posProductoChange() {
 
   if (sabores.length) {
     sabores.forEach(s => {
-      const opt = document.createElement("option");
-      opt.value = s; opt.textContent = s;
-      varSel.appendChild(opt);
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "pos-var-chip";
+      btn.textContent = s;
+      btn.dataset.value = s;
+      btn.onclick = () => btn.classList.toggle("selected");
+      chipsEl.appendChild(btn);
     });
     varWrap.classList.remove("hidden");
   }
@@ -1398,13 +1409,13 @@ function posAgregarItem() {
   const sel     = document.getElementById("pos-sel-producto");
   const nombre  = sel.value;
   const precio  = Number(sel.selectedOptions[0]?.dataset.precio || 0);
-  const varSel  = document.getElementById("pos-sel-variedad");
   const varWrap = document.getElementById("pos-variedad-wrap");
-  const variedad = !varWrap.classList.contains("hidden") ? varSel.value : "";
+  const selectedChips = varWrap.querySelectorAll(".pos-var-chip.selected");
+  const variedad = Array.from(selectedChips).map(b => b.dataset.value).join(", ");
   const cantidad = posState.qty || 1;
 
   if (!nombre) { toast("Selecciona un producto"); return; }
-  if (!varWrap.classList.contains("hidden") && !variedad) { toast("Selecciona la variedad"); return; }
+  if (!varWrap.classList.contains("hidden") && !variedad) { toast("Elige al menos una variedad"); return; }
 
   posState.items.push({ nombre, variedad, cantidad, precio });
   posState.qty = 1;
@@ -1468,10 +1479,18 @@ async function posBuscarCliente() {
   posSearchTimer = setTimeout(async () => {
     const res = await api("searchClientPOS", { q });
     resultsEl.innerHTML = "";
+    const crearWrap = document.getElementById("pos-crear-cliente-wrap");
+    const crearMsg  = document.getElementById("pos-crear-msg");
     if (!res.ok || !res.clientes.length) {
-      resultsEl.innerHTML = "<p style='color:var(--text-lt);font-size:.85rem;padding:.5rem 0'>Sin resultados</p>";
+      resultsEl.innerHTML = "<p style='color:var(--text-lt);font-size:.85rem;padding:.5rem 0'>No encontrado</p>";
+      if (q.includes("@")) {
+        posState.correoNuevo = q;
+        crearMsg.textContent = "¿Agregar " + q + " al club?";
+        crearWrap.classList.remove("hidden");
+      }
       return;
     }
+    crearWrap && crearWrap.classList.add("hidden");
     res.clientes.forEach(c => {
       const div = document.createElement("div");
       div.className = "search-result-item";
@@ -1483,9 +1502,23 @@ async function posBuscarCliente() {
   }, 400);
 }
 
+async function posCrearCliente() {
+  const correo = posState.correoNuevo;
+  if (!correo) return;
+  showLoading();
+  const res = await api("iniciar", { correo });
+  hideLoading();
+  if (!res.ok) { toast("❌ " + res.error); return; }
+  toast("✅ " + correo.split("@")[0] + " agregado al club");
+  document.getElementById("pos-crear-cliente-wrap").classList.add("hidden");
+  posSeleccionarCliente({ correo, nombre: correo.split("@")[0], nivel: "Vecino" });
+}
+
 function posSeleccionarCliente(c) {
   posState.clienteSeleccionado = c;
   document.getElementById("pos-search-results").innerHTML = "";
+  const crearWrap = document.getElementById("pos-crear-cliente-wrap");
+  if (crearWrap) crearWrap.classList.add("hidden");
   document.getElementById("pos-cliente-sel-nombre").textContent = c.nombre || c.correo.split("@")[0];
   document.getElementById("pos-cliente-sel-correo").textContent = c.correo + " · " + c.nivel;
   document.getElementById("pos-cliente-seleccionado").classList.remove("hidden");
@@ -1534,6 +1567,21 @@ async function posRegistrarVenta(correo) {
     document.getElementById("dia-pts").textContent = sumRes.puntosEntregados;
     const topEl = document.getElementById("dia-top");
     if (topEl) topEl.textContent = sumRes.topProducto || "-";
+
+    const listEl = document.getElementById("dia-pedidos-list");
+    if (listEl && sumRes.ultimas) {
+      listEl.innerHTML = sumRes.ultimas.map(v => `
+        <div class="dia-pedido-row">
+          <div style="flex:1;min-width:0">
+            <p class="dia-pedido-prod">${v.productos}</p>
+            <p class="dia-pedido-sub">${v.sector}${v.correo ? " · " + v.correo.split("@")[0] : " · sin cliente"}</p>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <p class="dia-pedido-total">$${(v.total||0).toLocaleString("es-CO")}</p>
+            <p class="dia-pedido-hora">${v.hora}</p>
+          </div>
+        </div>`).join("") || "<p style='color:var(--text-lt);font-size:.82rem'>Sin ventas aún</p>";
+    }
   }
 }
 
@@ -1563,6 +1611,16 @@ function posIrAdmin() {
   } else {
     showScreen("admin");
   }
+}
+
+function adminIrACaja() {
+  if (state.posPin) {
+    sessionStorage.setItem("maddre_pos_pin",    state.posPin);
+    sessionStorage.setItem("maddre_pos_nombre", state.adminNombre || "");
+  } else if (state.adminPass) {
+    sessionStorage.setItem("maddre_pos_bypass", state.adminPass);
+  }
+  window.location.href = "pos.html";
 }
 
 // ── QR Scanner (guardado para después) ───────────────────────

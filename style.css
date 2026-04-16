@@ -1382,6 +1382,38 @@ html, body {
 .pin-destino { margin-top: 1.5rem; width: 100%; max-width: 16rem; animation: fadeIn .3s ease; }
 .pin-error { color: #b03020; font-size: .85rem; }
 
+/* ── POS VARIEDAD CHIPS ──────────────────────────────────── */
+.pos-var-chips { display:flex; flex-wrap:wrap; gap:.5rem; padding:.25rem 0; }
+.pos-var-chip {
+  padding: .35rem .85rem;
+  border-radius: 999px;
+  border: 1.5px solid var(--border);
+  background: var(--white);
+  color: var(--text-md);
+  font-size: .82rem;
+  cursor: pointer;
+  transition: all .15s;
+}
+.pos-var-chip.selected {
+  background: var(--cafe);
+  color: #fff;
+  border-color: var(--cafe);
+}
+
+/* ── POS PEDIDOS HOY ─────────────────────────────────────── */
+.dia-pedido-row {
+  display: flex;
+  align-items: flex-start;
+  gap: .75rem;
+  padding: .45rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.dia-pedido-row:last-child { border-bottom: none; }
+.dia-pedido-prod { font-size: .8rem; font-weight: 500; color: var(--text); }
+.dia-pedido-sub  { font-size: .72rem; color: var(--text-lt); }
+.dia-pedido-total { font-size: .82rem; font-weight: 600; color: var(--cafe); }
+.dia-pedido-hora  { font-size: .7rem; color: var(--text-lt); }
+
 /* ── NUEVOS VECINOS ──────────────────────────────────────── */
 .admin-nuevos-list { display:flex; flex-direction:column; gap:.5rem; }
 .nuevo-vecino-row {

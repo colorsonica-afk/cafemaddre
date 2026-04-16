@@ -99,10 +99,8 @@
           </select>
         </div>
         <div id="pos-variedad-wrap" class="field hidden">
-          <label>Variedad</label>
-          <select id="pos-sel-variedad">
-            <option value="">— selecciona —</option>
-          </select>
+          <label>Variedad <span class="hint">(elige una o varias)</span></label>
+          <div id="pos-variedad-chips" class="pos-var-chips"></div>
         </div>
         <div class="field">
           <label>Cantidad</label>
@@ -139,6 +137,10 @@
           <p id="pos-cliente-sel-correo" class="prof-sub"></p>
           <button class="btn-primary" onclick="posConfirmarConCliente()">✔ Confirmar con este cliente</button>
         </div>
+        <div id="pos-crear-cliente-wrap" class="hidden" style="margin-top:.75rem">
+          <p id="pos-crear-msg" style="font-size:.8rem;color:var(--text-lt);margin-bottom:.5rem"></p>
+          <button class="btn-ghost" onclick="posCrearCliente()" style="width:100%;color:var(--verde)">+ Agregar al club y facturar</button>
+        </div>
         <button class="btn-ghost" onclick="posConfirmarSinCliente()" style="margin-top:.75rem">Facturar sin cliente</button>
       </div>
     </div>
@@ -164,6 +166,10 @@
       </div>
       <div style="padding:0 1rem 1rem">
         <button class="btn-primary" onclick="posReset()">Nueva venta</button>
+      </div>
+      <div class="card" style="margin:0 1rem 1rem">
+        <p class="pos-agregar-title" style="margin-bottom:.6rem">🧾 Pedidos de hoy</p>
+        <div id="dia-pedidos-list" style="display:flex;flex-direction:column;gap:.4rem"></div>
       </div>
     </div>
 
