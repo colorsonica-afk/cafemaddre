@@ -1109,7 +1109,9 @@ async function loadAdminSummary() {
   document.getElementById("adm-transacciones").textContent = res.transacciones || 0;
   document.getElementById("adm-vecinos").textContent = res.vecinos || 0;
   document.getElementById("adm-rollitos").textContent = res.rollitosCanjeados || 0;
-  document.getElementById("adm-libros").textContent   = res.librosDisponibles || 0;
+  document.getElementById("adm-libros").textContent        = res.librosDisponibles  || 0;
+  document.getElementById("adm-cajas-semana").textContent  = res.cajasEsemana      ?? "—";
+  document.getElementById("adm-rollitos-semana").textContent = res.rollitosEsemana  ?? "—";
   document.getElementById("adm-recipients-pill").textContent = `👥 ${res.vecinos || 0} vecinos recibirán este mensaje`;
 
   // Nuevos vecinos esta semana

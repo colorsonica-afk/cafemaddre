@@ -1414,6 +1414,23 @@ html, body {
 .dia-pedido-total { font-size: .82rem; font-weight: 600; color: var(--cafe); }
 .dia-pedido-hora  { font-size: .7rem; color: var(--text-lt); }
 
+/* ── PROMOS SEMANA ───────────────────────────────────────── */
+.promos-semana-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .75rem;
+  margin-top: .25rem;
+}
+.promo-sem-item {
+  text-align: center;
+  background: var(--bg);
+  border-radius: var(--radius);
+  padding: .75rem .5rem;
+}
+.promo-sem-icon { font-size: 1.4rem; }
+.promo-sem-num  { font-family: 'Playfair Display', serif; font-size: 1.6rem; color: var(--cafe); margin: .2rem 0; }
+.promo-sem-lbl  { font-size: .68rem; color: var(--text-lt); }
+
 /* ── NUEVOS VECINOS ──────────────────────────────────────── */
 .admin-nuevos-list { display:flex; flex-direction:column; gap:.5rem; }
 .nuevo-vecino-row {
