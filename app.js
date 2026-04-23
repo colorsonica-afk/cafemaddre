@@ -1156,6 +1156,9 @@ async function loadAdminSummary() {
     res.margenHistorico, res.totalVentas, res.mpTotal);
   setMargenCard("adm-margen-mes", "adm-margen-mes-sub",
     res.margenMes, res.ventasMes, res.mpMes);
+  const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+  const lblMes = document.getElementById("adm-margen-mes-lbl");
+  if (lblMes) lblMes.textContent = MESES[new Date().getMonth()];
 
   // Setear fecha de hoy en form materia prima si aún vacía
   const mpFechaEl = document.getElementById("mp-fecha");
