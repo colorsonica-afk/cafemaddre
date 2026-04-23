@@ -538,7 +538,48 @@
         <p class="as-lbl">libros a canjear</p>
       </div>
     </div>
-    <div class="card" style="margin:1rem">
+    <!-- Meta neta -->
+    <div class="card" style="margin:0 1rem 1rem">
+      <p class="card-title">📊 Meta neta (ventas vs insumos)</p>
+      <div class="meta-neta-grid">
+        <div class="meta-neta-item">
+          <p class="meta-neta-lbl">Histórica</p>
+          <p id="adm-margen-historico" class="meta-neta-pct">—</p>
+          <p id="adm-margen-hist-sub" class="meta-neta-sub">sin datos</p>
+        </div>
+        <div class="meta-neta-item">
+          <p class="meta-neta-lbl">Este mes</p>
+          <p id="adm-margen-mes" class="meta-neta-pct">—</p>
+          <p id="adm-margen-mes-sub" class="meta-neta-sub">sin datos</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Registrar materia prima -->
+    <div class="card" style="margin:0 1rem 1rem">
+      <p class="card-title">🛒 Registrar compra de insumos</p>
+      <div class="field">
+        <label>Fecha</label>
+        <input id="mp-fecha" type="date">
+      </div>
+      <div class="field">
+        <label>Proveedor</label>
+        <select id="mp-proveedor">
+          <option value="D1">D1</option>
+          <option value="Salsamentaria">Salsamentaria</option>
+          <option value="Fruver">Fruver</option>
+          <option value="Otro">Otro</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Valor ($)</label>
+        <input id="mp-valor" type="number" inputmode="numeric" placeholder="0" min="0">
+      </div>
+      <button class="btn-primary" onclick="registrarMateriaPrima()">Registrar compra</button>
+      <p id="mp-msg" class="hidden" style="margin-top:.6rem;font-size:.8rem"></p>
+    </div>
+
+    <div class="card" style="margin:0 1rem 1rem">
       <p class="card-title">🎁 Promos canjeadas esta semana</p>
       <div class="promos-semana-grid">
         <div class="promo-sem-item">

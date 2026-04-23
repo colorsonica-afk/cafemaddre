@@ -1497,6 +1497,35 @@ html, body {
   font-style: italic;
 }
 
+/* ── META NETA SEMÁFORO ──────────────────────────────────── */
+.meta-neta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: .25rem;
+}
+.meta-neta-item { text-align: center; }
+.meta-neta-lbl {
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: var(--text-lt);
+  margin-bottom: .3rem;
+}
+.meta-neta-pct {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.4rem;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: .3rem;
+  color: var(--text);
+  transition: color .3s;
+}
+.meta-neta-sub { font-size: .68rem; color: var(--text-lt); line-height: 1.4; }
+.semaforo-verde   { color: var(--verde) !important; }
+.semaforo-naranja { color: #C47B2A !important; }
+.semaforo-rojo    { color: #C0392B !important; }
+
 /* ── PROMOS SEMANA ───────────────────────────────────────── */
 .promos-semana-grid {
   display: grid;

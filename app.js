@@ -1085,6 +1085,42 @@ async function adminAuthAndGo(destination) {
   }
 }
 
+// ── Semáforo de margen neto ───────────────────────────────────
+function setMargenCard(pctId, subId, pct, ventas, mp) {
+  const pctEl = document.getElementById(pctId);
+  const subEl = document.getElementById(subId);
+  if (!pctEl) return;
+  if (pct === null || pct === undefined || isNaN(pct)) {
+    pctEl.textContent = "—";
+    pctEl.className   = "meta-neta-pct";
+    if (subEl) subEl.textContent = "sin datos de insumos aún";
+    return;
+  }
+  pctEl.textContent = pct + "%";
+  pctEl.className   = "meta-neta-pct " + (pct >= 30 ? "semaforo-verde" : pct >= 0 ? "semaforo-naranja" : "semaforo-rojo");
+  if (subEl) subEl.textContent =
+    "$" + (ventas||0).toLocaleString("es-CO") + " ventas · $" + (mp||0).toLocaleString("es-CO") + " insumos";
+}
+
+// ── Materia prima ─────────────────────────────────────────────
+async function registrarMateriaPrima() {
+  const fecha    = document.getElementById("mp-fecha")?.value;
+  const proveedor= document.getElementById("mp-proveedor")?.value;
+  const valor    = document.getElementById("mp-valor")?.value;
+  if (!fecha || !valor || Number(valor) <= 0) { toast("Completa fecha y valor"); return; }
+  showLoading();
+  const res = await api("registrarMateriaPrima", {
+    fecha, proveedor, valor,
+    adminPassword: state.adminPass || "",
+    pin: state.posPin || "",
+  });
+  hideLoading();
+  if (!res.ok) { toast("❌ " + (res.error || "Error")); return; }
+  toast("✅ Compra registrada — actualizando márgenes…");
+  document.getElementById("mp-valor").value = "";
+  loadAdminSummary(); // refresca márgenes automáticamente
+}
+
 // ── ADMIN TABS ────────────────────────────────────────────────
 function adminTab(btn, tab) {
   document.querySelectorAll(".admin-tab").forEach(b => b.classList.remove("active"));
@@ -1110,10 +1146,22 @@ async function loadAdminSummary() {
   document.getElementById("adm-transacciones").textContent = res.transacciones || 0;
   document.getElementById("adm-vecinos").textContent = res.vecinos || 0;
   document.getElementById("adm-rollitos").textContent = res.rollitosCanjeados || 0;
-  document.getElementById("adm-libros").textContent        = res.librosDisponibles  || 0;
-  document.getElementById("adm-cajas-semana").textContent  = res.cajasEsemana      ?? "—";
-  document.getElementById("adm-rollitos-semana").textContent = res.rollitosEsemana  ?? "—";
+  document.getElementById("adm-libros").textContent          = res.librosDisponibles  || 0;
+  document.getElementById("adm-cajas-semana").textContent    = res.cajasEsemana      ?? "—";
+  document.getElementById("adm-rollitos-semana").textContent = res.rollitosEsemana   ?? "—";
   document.getElementById("adm-recipients-pill").textContent = `👥 ${res.vecinos || 0} vecinos recibirán este mensaje`;
+
+  // Márgenes netos
+  setMargenCard("adm-margen-historico", "adm-margen-hist-sub",
+    res.margenHistorico, res.totalVentas, res.mpTotal);
+  setMargenCard("adm-margen-mes", "adm-margen-mes-sub",
+    res.margenMes, res.ventasMes, res.mpMes);
+
+  // Setear fecha de hoy en form materia prima si aún vacía
+  const mpFechaEl = document.getElementById("mp-fecha");
+  if (mpFechaEl && !mpFechaEl.value) {
+    mpFechaEl.value = new Date().toISOString().slice(0, 10);
+  }
 
   // Nuevos vecinos esta semana
   const nuevosEl = document.getElementById("admin-nuevos-list");
