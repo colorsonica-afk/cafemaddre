@@ -1414,6 +1414,89 @@ html, body {
 .dia-pedido-total { font-size: .82rem; font-weight: 600; color: var(--cafe); }
 .dia-pedido-hora  { font-size: .7rem; color: var(--text-lt); }
 
+/* Panel persistente pedidos en caja */
+.pos-pedidos-panel {
+  margin: 0 1rem 1rem;
+}
+.pos-pedidos-hoy-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: .6rem;
+}
+.pos-pedidos-refresh { font-size: .82rem; }
+.pos-pedidos-list { display: flex; flex-direction: column; }
+.pos-pedido-edit-btn {
+  font-size: .68rem;
+  color: var(--cafe);
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: .15rem .5rem;
+  cursor: pointer;
+  margin-top: .2rem;
+  white-space: nowrap;
+}
+.pos-pedido-edit-btn:hover { background: var(--crema-dark); }
+
+/* Edición inline en admin */
+.admin-pedido-row {
+  display: flex;
+  align-items: flex-start;
+  gap: .75rem;
+  padding: .6rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.admin-pedido-row:last-child { border-bottom: none; }
+.admin-pedido-info { flex: 1; min-width: 0; }
+.admin-pedido-right {
+  text-align: right;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: .25rem;
+}
+.admin-pedido-cliente {
+  font-size: .72rem;
+  color: var(--verde);
+  font-weight: 500;
+}
+.admin-pedido-asignar-btn {
+  font-size: .72rem;
+  color: var(--cafe);
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: 20px;
+  padding: .2rem .6rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.admin-pedido-asignar-btn:hover { border-style: solid; background: var(--crema-dark); }
+.admin-asignar-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+  min-width: 160px;
+}
+.admin-asignar-input {
+  padding: .4rem .6rem;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: .8rem;
+  background: var(--crema);
+  width: 100%;
+}
+.admin-asignar-results {
+  max-height: 140px;
+  overflow-y: auto;
+}
+.admin-sin-cliente-tag {
+  font-size: .7rem;
+  color: var(--text-lt);
+  font-style: italic;
+}
+
 /* ── PROMOS SEMANA ───────────────────────────────────────── */
 .promos-semana-grid {
   display: grid;

@@ -504,6 +504,7 @@
   <div class="admin-nav">
     <button class="admin-tab active" onclick="adminTab(this,'resumen')">📊 Resumen</button>
     <button class="admin-tab" onclick="adminTab(this,'clientes')">🔍 Clientes</button>
+    <button class="admin-tab" onclick="adminTab(this,'pedidos')">📋 Pedidos</button>
     <button class="admin-tab" onclick="adminTab(this,'promos')">🎁 Promos</button>
     <button class="admin-tab" onclick="adminTab(this,'masivo')">📨 Correos</button>
   </div>
@@ -605,6 +606,19 @@
       <div id="adm-compras" class="compras-list"></div>
       <p class="mini-title" style="margin-top:.75rem">Promos canjeadas</p>
       <div id="adm-promos-list" class="promos-hist-list"></div>
+    </div>
+  </div>
+
+  <!-- ── TAB PEDIDOS ── -->
+  <div id="admin-tab-pedidos" class="admin-section hidden">
+    <div class="card" style="margin:1rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
+        <p class="card-title" style="margin:0">📋 Pedidos de hoy</p>
+        <button class="sec-refresh-btn" onclick="loadAdminPedidos()">↻</button>
+      </div>
+      <div id="admin-pedidos-list">
+        <p style="color:var(--text-lt);font-size:.82rem">Cargando…</p>
+      </div>
     </div>
   </div>
 

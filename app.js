@@ -1097,6 +1097,7 @@ function adminTab(btn, tab) {
     document.getElementById("admin-client-detail").classList.add("hidden");
     loadAllClientes();
   }
+  if (tab === "pedidos") loadAdminPedidos();
 }
 
 async function loadAdminSummary() {
@@ -1332,9 +1333,10 @@ async function createFlash() {
 
 let posState = {
   sector: null,
-  items: [],       // [{nombre, variedad, cantidad, precio}]
+  items: [],         // [{nombre, variedad, cantidad, precio}]
   qty: 1,
   config: null,
+  editandoId: null,  // id de la venta en edición (null = nueva venta)
 };
 
 async function initPOS() {
@@ -1346,6 +1348,7 @@ async function initPOS() {
   renderSectores(res.sectores);
   renderProductoSelect(res.productos);
   posShowStep("sector");
+  loadPedidosHoy(); // carga panel persistente en background
 }
 
 // ── PASO 1: Sector ────────────────────────────────────────────
@@ -1364,6 +1367,8 @@ function renderSectores(sectores) {
 function posSelSector(sector) {
   posState.sector = sector;
   posState.items = [];
+  posState.editandoId = null;
+  posCancelarEdicion();
   document.getElementById("pos-sector-label").textContent = sector;
   document.getElementById("pos-items-list").innerHTML = "";
   document.getElementById("pos-total-wrap").classList.add("hidden");
@@ -1574,26 +1579,16 @@ async function posRegistrarVenta(correo) {
   await new Promise(r => setTimeout(r, 1500));
   const sumRes = await api("getDaySummary", { adminPassword: state.adminPass || "", pin: state.posPin || "" });
   if (sumRes.ok) {
-    document.getElementById("dia-ventas").textContent = sumRes.ventasHoy;
-    document.getElementById("dia-total").textContent = "$" + (sumRes.totalHoy || 0).toLocaleString("es-CO");
-    document.getElementById("dia-pts").textContent = sumRes.puntosEntregados;
+    const venEl = document.getElementById("dia-ventas");
+    const totEl = document.getElementById("dia-total");
+    const ptsEl = document.getElementById("dia-pts");
     const topEl = document.getElementById("dia-top");
+    if (venEl) venEl.textContent = sumRes.ventasHoy;
+    if (totEl) totEl.textContent = "$" + (sumRes.totalHoy || 0).toLocaleString("es-CO");
+    if (ptsEl) ptsEl.textContent = sumRes.puntosEntregados;
     if (topEl) topEl.textContent = sumRes.topProducto || "-";
-
-    const listEl = document.getElementById("dia-pedidos-list");
-    if (listEl && sumRes.ultimas) {
-      listEl.innerHTML = sumRes.ultimas.map(v => `
-        <div class="dia-pedido-row">
-          <div style="flex:1;min-width:0">
-            <p class="dia-pedido-prod">${v.productos}</p>
-            <p class="dia-pedido-sub">${v.sector}${v.correo ? " · " + v.correo.split("@")[0] : " · sin cliente"}</p>
-          </div>
-          <div style="text-align:right;flex-shrink:0">
-            <p class="dia-pedido-total">$${(v.total||0).toLocaleString("es-CO")}</p>
-            <p class="dia-pedido-hora">${v.hora}</p>
-          </div>
-        </div>`).join("") || "<p style='color:var(--text-lt);font-size:.82rem'>Sin ventas aún</p>";
-    }
+    // Actualizar panel persistente
+    renderPedidosHoyList(sumRes.ultimas || []);
   }
 }
 
@@ -1607,6 +1602,7 @@ function posShowStep(step) {
 
 function posReset() {
   posState = { sector: null, items: [], qty: 1, config: posState.config };
+  posCancelarEdicion();
   if (posState.config) {
     posShowStep("sector");
   } else if (window.POS_MODE) {
@@ -1623,6 +1619,199 @@ function posIrAdmin() {
   } else {
     showScreen("admin");
   }
+}
+
+// ── POS: Pedidos de hoy (panel persistente) ───────────────────
+async function loadPedidosHoy() {
+  const listEl = document.getElementById("pos-pedidos-hoy-list");
+  if (!listEl) return;
+  const sumRes = await api("getDaySummary", { pin: state.posPin || "", adminPassword: state.adminPass || "" });
+  if (!sumRes.ok) {
+    listEl.innerHTML = "<p style='color:var(--text-lt);font-size:.82rem'>Sin conexión</p>";
+    return;
+  }
+  renderPedidosHoyList(sumRes.ultimas || []);
+}
+
+function renderPedidosHoyList(ultimas) {
+  const listEl = document.getElementById("pos-pedidos-hoy-list");
+  if (!listEl) return;
+  if (!ultimas.length) {
+    listEl.innerHTML = "<p style='color:var(--text-lt);font-size:.82rem'>Sin ventas aún hoy</p>";
+    return;
+  }
+  listEl.innerHTML = ultimas.map(v => {
+    const safeProds = (v.productos || "").replace(/'/g, "\\'");
+    const safeSector = (v.sector || "").replace(/'/g, "\\'");
+    return `<div class="dia-pedido-row">
+      <div style="flex:1;min-width:0">
+        <p class="dia-pedido-prod">${v.productos}</p>
+        <p class="dia-pedido-sub">${v.sector}${v.correo ? " · " + v.correo.split("@")[0] : " · sin cliente"}</p>
+      </div>
+      <div style="text-align:right;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:.15rem">
+        <p class="dia-pedido-total">$${(v.total||0).toLocaleString("es-CO")}</p>
+        <p class="dia-pedido-hora">${v.hora}</p>
+        <button class="pos-pedido-edit-btn" onclick="posEditarVenta('${v.id}','${safeProds}','${safeSector}')">✏️ Editar</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+// Parsea string "PRODUCTO (VAR) x2, OTRO x1" → array de items con precios
+function parsearProductosStr(str) {
+  const items = [];
+  if (!str) return items;
+  str.split(",").map(s => s.trim()).filter(Boolean).forEach(part => {
+    const match = part.match(/^(.+?)\s+x(\d+)$/i);
+    if (!match) return;
+    let nombre = match[1].trim();
+    const cantidad = parseInt(match[2], 10) || 1;
+    const varMatch = nombre.match(/^(.+?)\s+\(([^)]+)\)$/);
+    let variedad = "";
+    if (varMatch) {
+      nombre = varMatch[1].trim();
+      variedad = varMatch[2].replace(/_/g, " ");
+    }
+    const prod = (posState.config?.productos || []).find(p =>
+      p.nombre.toUpperCase() === nombre.toUpperCase()
+    );
+    const precio = prod ? Number(prod.precio) : 0;
+    items.push({ nombre, variedad, cantidad, precio });
+  });
+  return items;
+}
+
+// Entra en modo edición para una venta existente
+function posEditarVenta(id, productosStr, sector) {
+  posState.editandoId = id;
+  posState.sector = sector;
+  posState.items = parsearProductosStr(productosStr);
+  document.getElementById("pos-sector-label").textContent = sector;
+  renderItemsList();
+  // Swap botones
+  const continuar = document.getElementById("pos-continuar-btn");
+  const guardar   = document.getElementById("pos-guardar-edicion-btn");
+  const cancelar  = document.getElementById("pos-cancelar-edicion-btn");
+  if (continuar) continuar.classList.add("hidden");
+  if (guardar)   guardar.classList.remove("hidden");
+  if (cancelar)  cancelar.classList.remove("hidden");
+  posShowStep("pedido");
+  document.querySelector(".scroll-wrap")?.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+async function posGuardarEdicion() {
+  const id = posState.editandoId;
+  if (!id) return;
+  if (!posState.items.length) { toast("Agrega al menos un producto"); return; }
+  const productos = posState.items.map(i =>
+    `${i.nombre}${i.variedad ? " (" + i.variedad.replace(/ /g, "_") + ")" : ""} x${i.cantidad}`
+  ).join(", ");
+  const total = posState.items.reduce((s, i) => s + i.precio * i.cantidad, 0);
+  showLoading();
+  const res = await api("editarVenta", { id, productos, total, pin: state.posPin || "" });
+  hideLoading();
+  if (!res.ok) { toast("❌ " + (res.error || "Error")); return; }
+  toast("✅ Pedido actualizado");
+  posCancelarEdicion();
+  await loadPedidosHoy();
+  posShowStep("sector");
+}
+
+function posCancelarEdicion() {
+  posState.editandoId = null;
+  const continuar = document.getElementById("pos-continuar-btn");
+  const guardar   = document.getElementById("pos-guardar-edicion-btn");
+  const cancelar  = document.getElementById("pos-cancelar-edicion-btn");
+  if (continuar) continuar.classList.remove("hidden");
+  if (guardar)   guardar.classList.add("hidden");
+  if (cancelar)  cancelar.classList.add("hidden");
+}
+
+// ── ADMIN: Pedidos de hoy ─────────────────────────────────────
+async function loadAdminPedidos() {
+  const listEl = document.getElementById("admin-pedidos-list");
+  if (!listEl) return;
+  listEl.innerHTML = "<p style='color:var(--text-lt);font-size:.82rem'>Cargando…</p>";
+  const res = await api("getDaySummary", { adminPassword: state.adminPass || "", pin: state.posPin || "" });
+  if (!res.ok) {
+    listEl.innerHTML = "<p style='color:var(--text-lt);font-size:.82rem'>Error al cargar</p>";
+    return;
+  }
+  const pedidos = res.ultimas || [];
+  if (!pedidos.length) {
+    listEl.innerHTML = "<p style='color:var(--text-lt);font-size:.82rem'>Sin ventas hoy</p>";
+    return;
+  }
+  listEl.innerHTML = pedidos.map(v => `
+    <div class="admin-pedido-row" id="adm-pedido-${v.id}">
+      <div class="admin-pedido-info">
+        <p class="dia-pedido-prod">${v.productos}</p>
+        <p class="dia-pedido-sub">${v.sector} · ${v.hora}</p>
+      </div>
+      <div class="admin-pedido-right">
+        <p class="dia-pedido-total">$${(v.total||0).toLocaleString("es-CO")}</p>
+        ${v.correo
+          ? `<p class="admin-pedido-cliente">👤 ${v.correo.split("@")[0]}</p>`
+          : `<span class="admin-sin-cliente-tag">sin cliente</span>
+             <button class="admin-pedido-asignar-btn" onclick="adminAsignarCliente('${v.id}')">+ Asignar cliente</button>`
+        }
+      </div>
+    </div>`).join("");
+}
+
+function adminAsignarCliente(id) {
+  const row = document.getElementById("adm-pedido-" + id);
+  if (!row) return;
+  const right = row.querySelector(".admin-pedido-right");
+  right.innerHTML = `
+    <div class="admin-asignar-wrap">
+      <input type="email" inputmode="email" class="admin-asignar-input"
+             id="adm-asignar-input-${id}"
+             placeholder="correo del cliente"
+             oninput="adminBuscarParaAsignar('${id}')">
+      <div id="adm-asignar-results-${id}" class="admin-asignar-results search-results"></div>
+      <button class="btn-link" style="font-size:.75rem" onclick="loadAdminPedidos()">cancelar</button>
+    </div>`;
+  document.getElementById("adm-asignar-input-" + id)?.focus();
+}
+
+let admAsignarTimer = null;
+async function adminBuscarParaAsignar(id) {
+  const q = document.getElementById("adm-asignar-input-" + id)?.value?.trim();
+  const resultsEl = document.getElementById("adm-asignar-results-" + id);
+  if (!resultsEl) return;
+  if (!q || q.length < 2) { resultsEl.innerHTML = ""; return; }
+  clearTimeout(admAsignarTimer);
+  admAsignarTimer = setTimeout(async () => {
+    const res = await api("searchClientPOS", { q });
+    resultsEl.innerHTML = "";
+    if (!res.ok || !res.clientes?.length) {
+      resultsEl.innerHTML = "<p style='color:var(--text-lt);font-size:.8rem;padding:.3rem 0'>No encontrado</p>";
+      return;
+    }
+    res.clientes.forEach(c => {
+      const div = document.createElement("div");
+      div.className = "search-result-item";
+      div.innerHTML = `<p class='result-name'>${c.nombre || c.correo.split("@")[0]}</p>
+                       <p class='result-sub'>${c.correo}</p>`;
+      div.onclick = () => adminConfirmarAsignacion(id, c.correo);
+      resultsEl.appendChild(div);
+    });
+  }, 350);
+}
+
+async function adminConfirmarAsignacion(id, correo) {
+  showLoading();
+  const res = await api("asignarClienteVenta", {
+    id,
+    correo,
+    adminPassword: state.adminPass || "",
+    pin: state.posPin || ""
+  });
+  hideLoading();
+  if (!res.ok) { toast("❌ " + (res.error || "Error")); return; }
+  toast("✅ 1 punto asignado a " + correo.split("@")[0]);
+  await loadAdminPedidos();
 }
 
 function adminIrACaja() {

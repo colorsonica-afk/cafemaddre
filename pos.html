@@ -119,7 +119,9 @@
           <span>Total</span>
           <strong id="pos-total-val">$0</strong>
         </div>
-        <button class="btn-primary" onclick="posSiguienteCliente()">Continuar →</button>
+        <button id="pos-continuar-btn" class="btn-primary" onclick="posSiguienteCliente()">Continuar →</button>
+        <button id="pos-guardar-edicion-btn" class="btn-primary hidden" onclick="posGuardarEdicion()" style="margin-top:.5rem;background:var(--verde)">✓ Guardar cambios</button>
+        <button id="pos-cancelar-edicion-btn" class="btn-ghost hidden" onclick="posCancelarEdicion()" style="margin-top:.4rem">Cancelar edición</button>
       </div>
     </div>
 
@@ -145,6 +147,17 @@
       </div>
     </div>
 
+    <!-- PEDIDOS DE HOY: siempre visible -->
+    <div class="card pos-pedidos-panel">
+      <div class="pos-pedidos-hoy-header">
+        <p class="pos-agregar-title" style="margin:0">📋 Pedidos de hoy</p>
+        <button class="btn-link pos-pedidos-refresh" onclick="loadPedidosHoy()">↻ actualizar</button>
+      </div>
+      <div id="pos-pedidos-hoy-list" class="pos-pedidos-list">
+        <p style="color:var(--text-lt);font-size:.82rem">Cargando…</p>
+      </div>
+    </div>
+
     <!-- CONFIRMACIÓN + RESUMEN DÍA -->
     <div id="pos-step-ok" class="pos-step hidden">
       <div class="card pos-ok-card">
@@ -164,12 +177,8 @@
           <p id="dia-top" style="font-family:'Playfair Display',serif;color:var(--cafe);font-size:1.1rem;margin-top:.2rem">-</p>
         </div>
       </div>
-      <div style="padding:0 1rem 1rem">
+      <div style="padding:0 1rem 1.25rem">
         <button class="btn-primary" onclick="posReset()">Nueva venta</button>
-      </div>
-      <div class="card" style="margin:0 1rem 1rem">
-        <p class="pos-agregar-title" style="margin-bottom:.6rem">🧾 Pedidos de hoy</p>
-        <div id="dia-pedidos-list" style="display:flex;flex-direction:column;gap:.4rem"></div>
       </div>
     </div>
 
