@@ -1691,10 +1691,11 @@ function renderPedidosHoyList(ultimas) {
     listEl.innerHTML = "<p style='color:var(--text-lt);font-size:.82rem'>Sin ventas aún hoy</p>";
     return;
   }
-  listEl.innerHTML = ultimas.map(v => {
-    const safeProds = (v.productos || "").replace(/'/g, "\\'");
-    const safeSector = (v.sector || "").replace(/'/g, "\\'");
-    return `<div class="dia-pedido-row">
+  listEl.innerHTML = "";
+  ultimas.forEach(v => {
+    const row = document.createElement("div");
+    row.className = "dia-pedido-row";
+    row.innerHTML = `
       <div style="flex:1;min-width:0">
         <p class="dia-pedido-prod">${v.productos}</p>
         <p class="dia-pedido-sub">${v.sector}${v.correo ? " · " + v.correo.split("@")[0] : " · sin cliente"}</p>
@@ -1702,10 +1703,19 @@ function renderPedidosHoyList(ultimas) {
       <div style="text-align:right;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:.15rem">
         <p class="dia-pedido-total">$${(v.total||0).toLocaleString("es-CO")}</p>
         <p class="dia-pedido-hora">${v.hora}</p>
-        <button class="pos-pedido-edit-btn" onclick="posEditarVenta('${v.id}','${safeProds}','${safeSector}')">✏️ Editar</button>
-      </div>
-    </div>`;
-  }).join("");
+        ${v.id ? `<button class="pos-pedido-edit-btn" data-id="${v.id}">✏️ Editar</button>` : ""}
+      </div>`;
+    // Adjuntar datos seguros en el botón para evitar problemas con comillas/HTML
+    const editBtn = row.querySelector(".pos-pedido-edit-btn");
+    if (editBtn) {
+      editBtn._ventaData = { id: v.id, productos: v.productos, sector: v.sector };
+      editBtn.addEventListener("click", () => {
+        const d = editBtn._ventaData;
+        posEditarVenta(d.id, d.productos, d.sector);
+      });
+    }
+    listEl.appendChild(row);
+  });
 }
 
 // Parsea string "PRODUCTO (VAR) x2, OTRO x1" → array de items con precios
@@ -1734,6 +1744,7 @@ function parsearProductosStr(str) {
 
 // Entra en modo edición para una venta existente
 function posEditarVenta(id, productosStr, sector) {
+  if (!id) { toast("❌ Esta venta no tiene ID — redesplega el backend"); return; }
   posState.editandoId = id;
   posState.sector = sector;
   posState.items = parsearProductosStr(productosStr);
@@ -1793,8 +1804,12 @@ async function loadAdminPedidos() {
     listEl.innerHTML = "<p style='color:var(--text-lt);font-size:.82rem'>Sin ventas hoy</p>";
     return;
   }
-  listEl.innerHTML = pedidos.map(v => `
-    <div class="admin-pedido-row" id="adm-pedido-${v.id}">
+  listEl.innerHTML = "";
+  pedidos.forEach(v => {
+    const row = document.createElement("div");
+    row.className = "admin-pedido-row";
+    if (v.id) row.id = "adm-pedido-" + v.id;
+    row.innerHTML = `
       <div class="admin-pedido-info">
         <p class="dia-pedido-prod">${v.productos}</p>
         <p class="dia-pedido-sub">${v.sector} · ${v.hora}</p>
@@ -1804,10 +1819,16 @@ async function loadAdminPedidos() {
         ${v.correo
           ? `<p class="admin-pedido-cliente">👤 ${v.correo.split("@")[0]}</p>`
           : `<span class="admin-sin-cliente-tag">sin cliente</span>
-             <button class="admin-pedido-asignar-btn" onclick="adminAsignarCliente('${v.id}')">+ Asignar cliente</button>`
+             ${v.id ? `<button class="admin-pedido-asignar-btn" data-id="${v.id}">+ Asignar cliente</button>` : ""}`
         }
-      </div>
-    </div>`).join("");
+      </div>`;
+    // Evento seguro en el botón asignar
+    const asignarBtn = row.querySelector(".admin-pedido-asignar-btn");
+    if (asignarBtn) {
+      asignarBtn.addEventListener("click", () => adminAsignarCliente(v.id));
+    }
+    listEl.appendChild(row);
+  });
 }
 
 function adminAsignarCliente(id) {
