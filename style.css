@@ -232,6 +232,16 @@ html, body {
   transition: background .2s, border-color .2s;
 }
 .btn-ghost:hover { background: var(--crema2); border-color: var(--cafe-lt); }
+.btn-ghost.recording {
+  background: #C0392B;
+  color: var(--white);
+  border-color: #C0392B;
+  animation: pos-mic-pulse 1.1s ease-in-out infinite;
+}
+@keyframes pos-mic-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .7; }
+}
 
 .btn-link {
   width: 100%;

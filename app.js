@@ -1415,7 +1415,7 @@ function renderSectores(sectores) {
   });
 }
 
-function posSelSector(sector) {
+async function posSelSector(sector) {
   posState.sector = sector;
   posState.items = [];
   posState.editandoId = null;
@@ -1424,6 +1424,8 @@ function posSelSector(sector) {
   document.getElementById("pos-items-list").innerHTML = "";
   document.getElementById("pos-total-wrap").classList.add("hidden");
   posShowStep("pedido");
+  await cargarMesaAbierta(sector);
+  renderItemsList();
 }
 
 function posVolverSector() { posShowStep("sector"); }
@@ -1491,6 +1493,7 @@ function posAgregarItem() {
   sel.value = "";
   varWrap.classList.add("hidden");
   renderItemsList();
+  syncMesaItems();
 }
 
 function renderItemsList() {
@@ -1504,7 +1507,7 @@ function renderItemsList() {
     div.className = "pos-item-row";
     div.innerHTML = `
       <div class="pos-item-info">
-        <p class="pos-item-name">${item.nombre}${item.variedad ? " · " + item.variedad : ""}</p>
+        <p class="pos-item-name">${item.confianzaBaja ? "⚠️ " : ""}${item.nombre}${item.variedad ? " · " + item.variedad : ""}</p>
         <p class="pos-item-detail">x${item.cantidad} · $${subtotal.toLocaleString("es-CO")}</p>
       </div>
       <button class="pos-item-del" onclick="posEliminarItem(${idx})">✕</button>`;
@@ -1523,6 +1526,27 @@ function renderItemsList() {
 function posEliminarItem(idx) {
   posState.items.splice(idx, 1);
   renderItemsList();
+  syncMesaItems();
+}
+
+// ── Mesa abierta: persistencia en el backend (Sheet MESAS) ─────
+// Fire-and-forget: si el backend todavía no tiene estas acciones desplegadas,
+// el POS sigue funcionando igual que hoy (carrito en memoria), solo no sobrevive
+// un cambio de mesa/recarga hasta que se despliegue.
+async function cargarMesaAbierta(sector) {
+  try {
+    const res = await api("getMesaAbierta", { sector });
+    if (res && res.ok && Array.isArray(res.items)) {
+      posState.items = res.items;
+    }
+  } catch (e) { /* backend sin esta acción todavía */ }
+}
+
+function syncMesaItems() {
+  api("guardarMesa", {
+    sector: posState.sector,
+    items: JSON.stringify(posState.items),
+  }).catch(() => {});
 }
 
 function posSiguienteCliente() {
@@ -1609,7 +1633,7 @@ async function posRegistrarVenta(correo) {
   const total = posState.items.reduce((s, i) => s + i.precio * i.cantidad, 0);
 
   showLoading();
-  const res = await api("registerSale", {
+  const res = await api("cerrarMesa", {
     correo: correo || "",
     sector: posState.sector,
     productos,
@@ -1787,6 +1811,149 @@ function posCancelarEdicion() {
   if (continuar) continuar.classList.remove("hidden");
   if (guardar)   guardar.classList.add("hidden");
   if (cancelar)  cancelar.classList.add("hidden");
+}
+
+// ── Micrófono: reconocimiento de voz + matching contra catálogo ──
+const POS_NUMEROS_TEXTO = {
+  un: 1, uno: 1, una: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5,
+  seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10,
+};
+
+function posNormalizarTexto(s) {
+  return s
+    .toLowerCase()
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function posLevenshtein(a, b) {
+  const m = a.length, n = b.length;
+  const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      dp[i][j] = a[i - 1] === b[j - 1]
+        ? dp[i - 1][j - 1]
+        : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+    }
+  }
+  return dp[m][n];
+}
+
+// Mejor match de `textoNorm` contra una lista de strings candidatos.
+// Devuelve {valor, score} (score 0–1, 1 = match perfecto) o null si nada pasa el umbral.
+function posMejorMatch(textoNorm, candidatos) {
+  let mejor = null;
+  candidatos.forEach(c => {
+    const cNorm = posNormalizarTexto(c);
+    if (!cNorm) return;
+    let score;
+    if (textoNorm.includes(cNorm) || cNorm.includes(textoNorm)) {
+      score = cNorm.length / Math.max(cNorm.length, textoNorm.length);
+    } else {
+      const dist = posLevenshtein(textoNorm, cNorm);
+      score = 1 - dist / Math.max(cNorm.length, textoNorm.length, 1);
+    }
+    if (!mejor || score > mejor.score) mejor = { valor: c, score };
+  });
+  return mejor && mejor.score >= 0.45 ? mejor : null;
+}
+
+function posExtraerCantidad(fragmento) {
+  const digito = fragmento.match(/\b(\d+)\b/);
+  if (digito) return { cantidad: parseInt(digito[1], 10), resto: fragmento.replace(digito[0], " ") };
+  for (const palabra of Object.keys(POS_NUMEROS_TEXTO)) {
+    const re = new RegExp(`\\b${palabra}\\b`);
+    if (re.test(fragmento)) return { cantidad: POS_NUMEROS_TEXTO[palabra], resto: fragmento.replace(re, " ") };
+  }
+  return { cantidad: 1, resto: fragmento };
+}
+
+// Texto transcripto → array de items {nombre, variedad, cantidad, precio, confianzaBaja}
+function parsearPedidoVoz(textoCrudo) {
+  const productos = posState.config?.productos || [];
+  const saboresRollito = posState.config?.saboresRollito || [];
+  const saboresBaguette = posState.config?.saboresBaguette || [];
+  const nombresProducto = productos.map(p => p.nombre);
+
+  const fragmentos = posNormalizarTexto(textoCrudo)
+    .split(/\by\b|,/).map(f => f.trim()).filter(Boolean);
+  const items = [];
+
+  fragmentos.forEach(frag => {
+    const { cantidad, resto } = posExtraerCantidad(frag);
+    const matchProducto = posMejorMatch(resto, nombresProducto);
+    if (!matchProducto) return;
+
+    const prod = productos.find(p => p.nombre === matchProducto.valor);
+    let variedad = "";
+    let confianzaBaja = matchProducto.score < 0.7;
+
+    if (matchProducto.valor.includes("ROLLITO") || matchProducto.valor.includes("BAGUETTE")) {
+      const sabores = matchProducto.valor.includes("ROLLITO") ? saboresRollito : saboresBaguette;
+      const matchSabor = posMejorMatch(resto, sabores);
+      if (matchSabor) {
+        variedad = matchSabor.valor;
+        if (matchSabor.score < 0.7) confianzaBaja = true;
+      } else {
+        confianzaBaja = true; // rollito/baguette sin sabor reconocido — revisar a mano
+      }
+    }
+
+    items.push({ nombre: matchProducto.valor, variedad, cantidad, precio: Number(prod.precio), confianzaBaja });
+  });
+
+  return items;
+}
+
+function posAgregarItemsDesdeVoz(items) {
+  if (!items.length) { toast("🎤 No se reconoció ningún producto — probá de nuevo"); return; }
+  items.forEach(it => posState.items.push(it));
+  renderItemsList();
+  syncMesaItems();
+  const dudosos = items.filter(i => i.confianzaBaja).length;
+  toast(dudosos
+    ? `🎤 ${items.length} producto(s) agregado(s) — revisá ${dudosos} marcado(s) con ⚠️`
+    : `🎤 ${items.length} producto(s) agregado(s)`);
+}
+
+let posRecognition = null;
+let posGrabando = false;
+
+function posToggleGrabacion() {
+  if (posGrabando) { posRecognition?.stop(); return; }
+
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const btn = document.getElementById("pos-mic-btn");
+  const status = document.getElementById("pos-mic-status");
+  if (!SR) { toast("Este navegador no soporta reconocimiento de voz"); return; }
+
+  posRecognition = new SR();
+  posRecognition.lang = "es-CO";
+  posRecognition.interimResults = false;
+  posRecognition.maxAlternatives = 1;
+
+  posRecognition.onstart = () => {
+    posGrabando = true;
+    if (btn) { btn.textContent = "⏹ Detener"; btn.classList.add("recording"); }
+    if (status) status.textContent = "Escuchando…";
+  };
+  posRecognition.onresult = (e) => {
+    const texto = e.results[0][0].transcript;
+    if (status) status.textContent = `"${texto}"`;
+    posAgregarItemsDesdeVoz(parsearPedidoVoz(texto));
+  };
+  posRecognition.onerror = (e) => {
+    if (status) status.textContent = "Error: " + e.error;
+  };
+  posRecognition.onend = () => {
+    posGrabando = false;
+    if (btn) { btn.textContent = "🎤 Grabar"; btn.classList.remove("recording"); }
+  };
+  posRecognition.start();
 }
 
 // ── ADMIN: Pedidos de hoy ─────────────────────────────────────
