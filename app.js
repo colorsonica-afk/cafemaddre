@@ -249,6 +249,7 @@ async function restaurarSesion(correo) {
   state.profile = res;
   renderProfile(res);
   showScreen("profile");
+  iniciarTimerRegistro();
 }
 
 let loadingEl;
@@ -295,23 +296,36 @@ function mostrarVistaInvitado() {
   });
 }
 
-// Timer: muestra el popup de registro al minuto
+// Timer: muestra el popup de promo/registro apenas se entra al perfil
 let _registroTimer = null;
 function enPerfilInvitado() {
   return !state.correo && document.getElementById("screen-profile")?.classList.contains("active");
 }
+function enPantallaPerfil() {
+  return document.getElementById("screen-profile")?.classList.contains("active");
+}
 function iniciarTimerRegistro() {
   clearTimeout(_registroTimer);
-  // Antes esperaba 60s — ahora sale apenas se entra (delay chico solo para
-  // que la pantalla de invitado termine de renderizar primero).
-  _registroTimer = setTimeout(() => { if (enPerfilInvitado()) abrirModalRegistro(); }, 600);
+  // Delay chico solo para que la pantalla de perfil termine de renderizar primero.
+  _registroTimer = setTimeout(() => { if (enPantallaPerfil()) abrirModalRegistro(); }, 600);
 }
 
+// El modal sale siempre (logueado o invitado): a invitados les pide el correo,
+// a clientes ya logueados solo les muestra la promo con un botón de cerrar.
 function abrirModalRegistro() {
   clearTimeout(_registroTimer);
-  if (!enPerfilInvitado()) return;
+  if (!enPantallaPerfil()) return;
+  const form  = document.getElementById("modal-registro-form");
+  const okBtn = document.getElementById("modal-registro-ok-btn");
+  if (state.correo) {
+    form.classList.add("hidden");
+    okBtn.classList.remove("hidden");
+  } else {
+    form.classList.remove("hidden");
+    okBtn.classList.add("hidden");
+  }
   document.getElementById("modal-registro").classList.remove("hidden");
-  setTimeout(() => document.getElementById("modal-correo-input")?.focus(), 120);
+  if (!state.correo) setTimeout(() => document.getElementById("modal-correo-input")?.focus(), 120);
 }
 function cerrarModalRegistro() {
   document.getElementById("modal-registro").classList.add("hidden");

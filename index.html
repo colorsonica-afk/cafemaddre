@@ -856,14 +856,18 @@
       <span>🦋</span>
       <span class="brand-name-sm">maddre</span>
     </div>
-    <h3 class="modal-title">Únete al club</h3>
-    <p class="modal-sub">Acumula puntos, reserva tu rollito y accede a promos exclusivas del barrio</p>
-    <div class="field">
-      <input id="modal-correo-input" type="email" inputmode="email" placeholder="tu@correo.com" autocomplete="email">
+    <h3 class="modal-title">🌀 Promo de esta semana</h3>
+    <p class="modal-sub"><strong>2x1 en rollitos de canela de frutos rojos</strong> — de miércoles a viernes, de 3 a 7 PM</p>
+    <div id="modal-registro-form">
+      <p class="modal-sub" style="margin-top:.75rem">Únete al club: acumula puntos, reserva tu rollito y accede a promos exclusivas del barrio</p>
+      <div class="field">
+        <input id="modal-correo-input" type="email" inputmode="email" placeholder="tu@correo.com" autocomplete="email">
+      </div>
+      <div id="modal-correo-error" class="error-msg hidden"></div>
+      <button class="btn-primary" onclick="modalContinuarRegistro()">Continuar →</button>
+      <button class="modal-ahora-no" onclick="cerrarModalRegistro()">Ahora no</button>
     </div>
-    <div id="modal-correo-error" class="error-msg hidden"></div>
-    <button class="btn-primary" onclick="modalContinuarRegistro()">Continuar →</button>
-    <button class="modal-ahora-no" onclick="cerrarModalRegistro()">Ahora no</button>
+    <button id="modal-registro-ok-btn" class="btn-primary hidden" onclick="cerrarModalRegistro()">Genial, gracias 🦋</button>
   </div>
 </div>
 
@@ -907,6 +911,6 @@ function checkHash() {
 window.addEventListener("hashchange", checkHash);
 window.addEventListener("load", checkHash);
 </script>
-<script src="app.js?v=4"></script>
+<script src="app.js?v=5"></script>
 </body>
 </html>
