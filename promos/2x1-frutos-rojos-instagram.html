@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Promo 2x1 Maddre</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --crema:      #FAF7F0;
+    --crema2:     #F0E8D8;
+    --cafe:       #4A2E1A;
+    --cafe-md:    #5C3D2E;
+    --dorado:     #C8903A;
+    --dorado-lt:  #F5D98A;
+    --flash:      #D94F1A;
+    --verde-pale: #E8F2E5;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 1080px;
+    height: 1080px;
+    overflow: hidden;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .canvas {
+    position: relative;
+    width: 1080px;
+    height: 1080px;
+    background:
+      radial-gradient(circle at 15% 12%, rgba(245,217,138,0.25) 0%, transparent 40%),
+      radial-gradient(circle at 88% 85%, rgba(217,79,26,0.22) 0%, transparent 45%),
+      linear-gradient(160deg, var(--cafe) 0%, #6B4533 55%, #8B5A3A 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--crema);
+    text-align: center;
+    padding: 70px;
+  }
+
+  /* Decoración: puntitos y mariposas flotando (SVG propio, no emoji) */
+  .deco {
+    position: absolute;
+    color: var(--dorado-lt);
+    opacity: 0.5;
+    filter: drop-shadow(0 4px 10px rgba(0,0,0,.15));
+  }
+  .deco.b1 { top: 70px;  left: 80px;  width: 56px; height: 46px; transform: rotate(-12deg); }
+  .deco.b2 { top: 120px; right: 90px; width: 42px; height: 34px; transform: rotate(18deg); opacity:.3; }
+  .deco.b3 { bottom: 90px; left: 100px; width: 38px; height: 30px; transform: rotate(8deg); opacity:.25; }
+  .dot { position: absolute; border-radius: 50%; background: var(--dorado-lt); opacity: .35; }
+  .dot.d1 { width: 14px; height: 14px; top: 220px; left: 160px; }
+  .dot.d2 { width: 10px; height: 10px; top: 300px; right: 140px; }
+  .dot.d3 { width: 18px; height: 18px; bottom: 260px; right: 200px; }
+
+  .brand {
+    font-family: 'Dancing Script', cursive;
+    font-weight: 700;
+    font-size: 54px;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 8px;
+  }
+  .brand-icon { width: 46px; height: 38px; color: var(--dorado-lt); }
+  .brand-tag {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 17px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--dorado-lt);
+    margin-bottom: 46px;
+    opacity: .9;
+  }
+
+  .flash-pill {
+    background: var(--flash);
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 10px 28px;
+    border-radius: 999px;
+    margin-bottom: 34px;
+    box-shadow: 0 6px 20px rgba(217,79,26,0.4);
+  }
+
+  .hero {
+    font-family: 'Playfair Display', serif;
+    font-weight: 900;
+    font-style: italic;
+    font-size: 260px;
+    line-height: 0.85;
+    color: var(--dorado-lt);
+    text-shadow: 0 10px 40px rgba(0,0,0,0.35);
+    margin-bottom: 6px;
+  }
+
+  .producto {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    font-size: 58px;
+    line-height: 1.15;
+    margin-bottom: 6px;
+  }
+  .sabor {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    font-size: 30px;
+    color: var(--crema2);
+    margin-bottom: 42px;
+  }
+  .sabor strong { color: var(--dorado-lt); font-weight: 700; }
+
+  .horario-card {
+    background: rgba(250,247,240,0.1);
+    border: 1.5px solid rgba(250,247,240,0.35);
+    backdrop-filter: blur(2px);
+    border-radius: 22px;
+    padding: 26px 46px;
+    display: flex;
+    align-items: center;
+    gap: 22px;
+  }
+  .horario-card .dias {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    font-size: 30px;
+  }
+  .horario-card .sep { width: 1.5px; height: 34px; background: rgba(250,247,240,0.4); }
+  .horario-card .hora {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 700;
+    font-size: 30px;
+    color: var(--dorado-lt);
+  }
+
+  .footer-tag {
+    position: absolute;
+    bottom: 56px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 17px;
+    letter-spacing: 1.5px;
+    color: rgba(250,247,240,0.65);
+  }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="mariposa" viewBox="0 0 120 100">
+    <path fill="currentColor" d="M60 50 C 55 20, 20 5, 8 20 C -2 33, 15 55, 60 50 Z"/>
+    <path fill="currentColor" opacity="0.85" d="M60 50 C 57 75, 30 92, 18 82 C 8 73, 20 55, 60 50 Z"/>
+    <path fill="currentColor" d="M60 50 C 65 20, 100 5, 112 20 C 122 33, 105 55, 60 50 Z"/>
+    <path fill="currentColor" opacity="0.85" d="M60 50 C 63 75, 90 92, 102 82 C 112 73, 100 55, 60 50 Z"/>
+    <rect fill="currentColor" x="56" y="34" width="8" height="48" rx="4"/>
+  </symbol>
+</svg>
+<div class="canvas">
+  <svg class="deco b1"><use href="#mariposa"/></svg>
+  <svg class="deco b2"><use href="#mariposa"/></svg>
+  <svg class="deco b3"><use href="#mariposa"/></svg>
+  <span class="dot d1"></span>
+  <span class="dot d2"></span>
+  <span class="dot d3"></span>
+
+  <div class="brand"><svg class="brand-icon"><use href="#mariposa"/></svg> maddre</div>
+  <div class="brand-tag">Cocina saludable que cuida de ti</div>
+
+  <div class="flash-pill">Promo de la semana</div>
+
+  <div class="hero">2x1</div>
+  <div class="producto">Rollitos de Canela</div>
+  <div class="sabor">sabor <strong>Frutos Rojos</strong></div>
+
+  <div class="horario-card">
+    <div class="dias">Miér – Vier</div>
+    <div class="sep"></div>
+    <div class="hora">3 – 7 PM</div>
+  </div>
+
+  <div class="footer-tag">CAFÉ MADDRE · EL BARRIO SE ENDULZA CONTIGO</div>
+</div>
+</body>
+</html>

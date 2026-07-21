@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Admin — Maddre</title>
+<meta name="robots" content="noindex, nofollow">
+
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ── PIN CAJA ────────────────────────────────────────────── -->
+<div id="screen-pin" class="screen active">
+  <div class="pin-wrap">
+    <div class="brand-block-sm" style="justify-content:center;margin-bottom:2rem">
+      <span>🦋</span>
+      <span class="brand-name-sm">Panel Maddre</span>
+    </div>
+    <div class="pin-display">
+      <span id="pin-dot-1" class="pin-dot"></span>
+      <span id="pin-dot-2" class="pin-dot"></span>
+      <span id="pin-dot-3" class="pin-dot"></span>
+      <span id="pin-dot-4" class="pin-dot"></span>
+    </div>
+    <div id="pin-error" class="error-msg hidden" style="margin:.75rem 1rem 0"></div>
+    <div class="pin-pad">
+      <button class="pin-btn" onclick="pinPress('1')">1</button>
+      <button class="pin-btn" onclick="pinPress('2')">2</button>
+      <button class="pin-btn" onclick="pinPress('3')">3</button>
+      <button class="pin-btn" onclick="pinPress('4')">4</button>
+      <button class="pin-btn" onclick="pinPress('5')">5</button>
+      <button class="pin-btn" onclick="pinPress('6')">6</button>
+      <button class="pin-btn" onclick="pinPress('7')">7</button>
+      <button class="pin-btn" onclick="pinPress('8')">8</button>
+      <button class="pin-btn" onclick="pinPress('9')">9</button>
+      <button class="pin-btn pin-btn-clear" onclick="pinClear()">✕</button>
+      <button class="pin-btn" onclick="pinPress('0')">0</button>
+      <button class="pin-btn pin-btn-ok" onclick="pinSubmit()">→</button>
+    </div>
+    <div id="pin-destino" class="pin-destino hidden">
+      <button class="btn-primary" onclick="pinIrA('admin')">⚙️ Panel Admin</button>
+      <button class="btn-ghost" onclick="pinIrA('pos')" style="margin-top:.5rem">🦋 Ir a Caja</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── ADMIN LOGIN (contraseña, acceso directo) ───────────── -->
+<div id="screen-admin-login" class="screen">
+  <div class="topbar">
+    <button id="admin-login-back-btn" class="back-btn" onclick="adminLoginVolver()">← Volver</button>
+    <h2>Panel Admin</h2>
+  </div>
+  <div style="padding:1.5rem 1rem .5rem">
+    <p style="font-size:.82rem;color:var(--text-lt);text-align:center;line-height:1.5">
+      Ingresa la contraseña de administrador<br>para acceder al panel de gestión
+    </p>
+  </div>
+  <div class="card" style="margin:.5rem 1rem">
+    <div class="field">
+      <label>Contraseña admin</label>
+      <input id="admin-pass-input" type="password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <div id="admin-login-error" class="error-msg hidden"></div>
+    <button class="btn-primary" onclick="adminAuthAndGo()">Entrar al panel →</button>
+  </div>
+</div>
+
+<!-- ── ADMIN PANEL ─────────────────────────────────────────── -->
+<div id="screen-admin" class="screen">
+  <div id="ptr-indicator-admin" class="ptr-indicator" aria-hidden="true">🦋</div>
+  <div class="admin-topbar">
+    <div class="admin-topbar-left">
+      <span class="admin-logo">🦋 maddre</span>
+    </div>
+    <div class="admin-topbar-right">
+      <div id="admin-status-badge" class="status-badge cerrado">● Cerrado</div>
+      <button class="tab-switch-btn" onclick="adminIrACaja()">🦋 Caja</button>
+      <button class="back-btn" onclick="showScreen('pin');pinReset()">Salir</button>
+    </div>
+  </div>
+
+  <!-- Saludo admin -->
+  <div id="admin-saludo" class="admin-saludo"></div>
+
+  <!-- Nav tabs -->
+  <div class="admin-nav">
+    <button class="admin-tab active" onclick="adminTab(this,'resumen')">📊 Resumen</button>
+    <button class="admin-tab" onclick="adminTab(this,'clientes')">🔍 Clientes</button>
+    <button class="admin-tab" onclick="adminTab(this,'pedidos')">📋 Pedidos</button>
+    <button class="admin-tab" onclick="adminTab(this,'promos')">🎁 Promos</button>
+    <button class="admin-tab" onclick="adminTab(this,'masivo')">📨 Correos</button>
+  </div>
+
+  <!-- ── TAB RESUMEN ── -->
+  <div id="admin-tab-resumen" class="admin-section">
+    <div class="admin-stats-grid">
+      <div class="admin-stat highlight">
+        <span class="as-icon">💰</span>
+        <p id="adm-total-ventas" class="as-num">—</p>
+        <p class="as-lbl">ventas históricas</p>
+      </div>
+      <div class="admin-stat">
+        <span class="as-icon">🧾</span>
+        <p id="adm-transacciones" class="as-num">—</p>
+        <p class="as-lbl">transacciones</p>
+      </div>
+      <div class="admin-stat">
+        <span class="as-icon">🌿</span>
+        <p id="adm-vecinos" class="as-num">—</p>
+        <p class="as-lbl">vecinos registrados</p>
+      </div>
+      <div class="admin-stat">
+        <span class="as-icon">🦋</span>
+        <p id="adm-rollitos" class="as-num">—</p>
+        <p class="as-lbl">rollitos canjeados</p>
+      </div>
+      <div class="admin-stat">
+        <span class="as-icon">📚</span>
+        <p id="adm-libros" class="as-num">—</p>
+        <p class="as-lbl">libros a canjear</p>
+      </div>
+    </div>
+    <!-- Meta neta -->
+    <div class="card" style="margin:0 1rem 1rem">
+      <p class="card-title">📊 Meta neta (ventas vs insumos)</p>
+      <div class="meta-neta-grid">
+        <div class="meta-neta-item">
+          <p class="meta-neta-lbl">Histórica</p>
+          <p id="adm-margen-historico" class="meta-neta-pct">—</p>
+          <p id="adm-margen-hist-sub" class="meta-neta-sub">sin datos</p>
+        </div>
+        <div class="meta-neta-item">
+          <p id="adm-margen-mes-lbl" class="meta-neta-lbl">Este mes</p>
+          <p id="adm-margen-mes" class="meta-neta-pct">—</p>
+          <p id="adm-margen-mes-sub" class="meta-neta-sub">sin datos</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Registrar materia prima -->
+    <div class="card" style="margin:0 1rem 1rem">
+      <p class="card-title">🛒 Registrar compra de insumos</p>
+      <div class="field">
+        <label>Fecha</label>
+        <input id="mp-fecha" type="date">
+      </div>
+      <div class="field">
+        <label>Proveedor</label>
+        <select id="mp-proveedor">
+          <option value="D1">D1</option>
+          <option value="Salsamentaria">Salsamentaria</option>
+          <option value="Fruver">Fruver</option>
+          <option value="Otro">Otro</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Valor ($)</label>
+        <input id="mp-valor" type="number" inputmode="numeric" placeholder="0" min="0">
+      </div>
+      <button class="btn-primary" onclick="registrarMateriaPrima()">Registrar compra</button>
+      <p id="mp-msg" class="hidden" style="margin-top:.6rem;font-size:.8rem"></p>
+    </div>
+
+    <div class="card" style="margin:0 1rem 1rem">
+      <p class="card-title">🎁 Promos canjeadas esta semana</p>
+      <div class="promos-semana-grid">
+        <div class="promo-sem-item">
+          <span class="promo-sem-icon">📦</span>
+          <p id="adm-cajas-semana" class="promo-sem-num">—</p>
+          <p class="promo-sem-lbl">cajas semanales</p>
+        </div>
+        <div class="promo-sem-item">
+          <span class="promo-sem-icon">🌀</span>
+          <p id="adm-rollitos-semana" class="promo-sem-num">—</p>
+          <p class="promo-sem-lbl">puntos sumados</p>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="margin:1rem">
+      <p class="card-title">🎵 Top canciones de hoy</p>
+      <div id="adm-canciones" class="canciones-list"></div>
+    </div>
+  </div>
+
+  <!-- ── TAB CLIENTES ── -->
+  <div id="admin-tab-clientes" class="admin-section hidden">
+
+    <!-- Nuevos vecinos esta semana -->
+    <div class="card" style="margin:1rem 1rem .5rem">
+      <p class="sec-title" style="font-size:.85rem;margin-bottom:.75rem">🆕 Nuevos esta semana</p>
+      <div id="admin-nuevos-list" class="admin-nuevos-list">
+        <p style="color:var(--text-lt);font-size:.82rem">Cargando…</p>
+      </div>
+    </div>
+
+    <!-- Agregar cliente nuevo -->
+    <div class="card" style="margin:0 1rem .5rem">
+      <p class="sec-title" style="font-size:.85rem;margin-bottom:.75rem">Agregar al club</p>
+      <div class="admin-search-wrap" style="margin-bottom:.6rem">
+        <span class="search-icon-adm">✉️</span>
+        <input id="admin-nuevo-correo" type="email" inputmode="email" placeholder="correo@ejemplo.com" autocomplete="off">
+      </div>
+      <button class="btn-primary" style="width:100%" onclick="adminAgregarCliente()">+ Agregar vecino</button>
+      <p id="admin-nuevo-msg" class="hidden" style="margin-top:.6rem;font-size:.8rem;line-height:1.4"></p>
+    </div>
+
+    <!-- Buscador -->
+    <div class="card" style="margin:.5rem 1rem 1rem">
+      <div class="admin-search-wrap">
+        <span class="search-icon-adm">🔍</span>
+        <input id="admin-search" type="text" placeholder="Nombre o correo del vecino…" oninput="adminSearchDynamic()">
+      </div>
+      <div id="admin-search-results" class="search-results"></div>
+    </div>
+    <div id="admin-client-detail" class="card hidden" style="margin:0 1rem 1rem">
+      <div class="client-header-adm">
+        <div id="adm-avatar" class="c-avatar"></div>
+        <div style="flex:1">
+          <p id="adm-client-name" class="c-name">—</p>
+          <p id="adm-client-info" class="c-email"></p>
+        </div>
+        <div class="c-pts-wrap">
+          <p id="adm-client-pts" class="pts-num">0</p>
+          <p class="pts-lbl">puntos</p>
+        </div>
+      </div>
+      <div class="divider-line"></div>
+      <p class="mini-title">Historial de compras</p>
+      <div id="adm-compras" class="compras-list"></div>
+      <p class="mini-title" style="margin-top:.75rem">Promos canjeadas</p>
+      <div id="adm-promos-list" class="promos-hist-list"></div>
+    </div>
+  </div>
+
+  <!-- ── TAB PEDIDOS ── -->
+  <div id="admin-tab-pedidos" class="admin-section hidden">
+    <div class="card" style="margin:1rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
+        <p class="card-title" style="margin:0">📋 Pedidos de hoy</p>
+        <button class="sec-refresh-btn" onclick="loadAdminPedidos()">↻</button>
+      </div>
+      <div id="admin-pedidos-list">
+        <p style="color:var(--text-lt);font-size:.82rem">Cargando…</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB PROMOS ── -->
+  <div id="admin-tab-promos" class="admin-section hidden">
+    <div class="card" style="margin:1rem">
+      <p class="card-title">⚡ Crear flash</p>
+      <div class="field">
+        <input id="flash-texto" type="text" placeholder="Ej: Hoy hasta las 6pm: aromática gratis">
+      </div>
+      <div class="field">
+        <label>Nivel mínimo</label>
+        <select id="flash-nivel">
+          <option value="Vecino">🌿 Vecino (todos)</option>
+          <option value="Habitual">☕ Habitual</option>
+          <option value="De la casa">🌀 De la casa</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Hora de activación</label>
+        <select id="flash-horas">
+          <option value="3pm">3pm → 4pm</option>
+          <option value="4pm">4pm → 5pm</option>
+          <option value="5pm">5pm → 6pm</option>
+          <option value="6pm">6pm → 7pm</option>
+        </select>
+      </div>
+      <button class="btn-primary" onclick="createFlash()">⚡ Activar flash</button>
+    </div>
+    <div class="card" style="margin:0 1rem 1rem">
+      <p class="card-title">📋 Promos activas</p>
+      <div class="promo-admin-row">
+        <span class="promo-dot">📦</span>
+        <div class="promo-admin-info">
+          <p class="promo-admin-name">Caja semanal</p>
+          <p class="promo-admin-desc">4 rollitos por $20.000</p>
+        </div>
+        <span class="promo-status activa">Activa</span>
+      </div>
+      <div class="promo-admin-row">
+        <span class="promo-dot">🎂</span>
+        <div class="promo-admin-info">
+          <p class="promo-admin-name">Rollito cumpleañero</p>
+          <p class="promo-admin-desc">Rollito gratis el día de cumpleaños</p>
+        </div>
+        <span class="promo-status activa">Activa</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB MASIVO ── -->
+  <div id="admin-tab-masivo" class="admin-section hidden">
+    <div class="card" style="margin:1rem">
+      <p class="card-title">📨 Mensaje a todos los vecinos</p>
+      <div id="adm-recipients-pill" class="recipients-pill">👥 — vecinos recibirán este mensaje</div>
+
+      <div class="field" style="margin-top:1rem">
+        <label>Plantilla <span class="hint">(opcional — carga un HTML ya armado)</span></label>
+        <select id="masivo-plantilla" onchange="cargarPlantillaCorreo()">
+          <option value="">— sin plantilla, escribo el mensaje —</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Asunto</label>
+        <input id="masivo-asunto" type="text" placeholder="Ej: ¡Hoy tenemos pistacho! 🦋">
+      </div>
+      <div class="field">
+        <label>Mensaje <span class="hint">(texto normal, o pegá HTML directo si querés algo con formato/imágenes)</span></label>
+        <textarea id="masivo-mensaje" placeholder="Escribe tu mensaje aquí, o pegá HTML..." rows="7" style="width:100%;padding:.75rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:.95rem;background:var(--crema);resize:vertical;outline:none" oninput="updateEmailPreview()"></textarea>
+      </div>
+      <p class="mini-title" style="margin-bottom:.5rem">Vista previa</p>
+      <div class="preview-email">
+        <div class="email-header-preview">
+          <div class="eh-logo">🦋</div>
+          <div class="eh-name">maddre</div>
+          <div class="eh-sub">Un mensaje para ti, vecino 🦋</div>
+        </div>
+        <div id="email-preview-body" class="email-body-preview">Tu mensaje aparecerá aquí...</div>
+        <div class="email-footer-preview">
+          Café Maddre · Miércoles a Domingo · 3 pm – 7 pm<br>Hecho con amor 🦋
+        </div>
+      </div>
+      <button class="btn-primary" onclick="enviarMasivo()" style="margin-top:1rem">📨 Enviar a todos los vecinos</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── LOADING OVERLAY ─────────────────────────────────────── -->
+<div id="loading-overlay" class="loading-overlay hidden">
+  <div class="butterfly spin">🦋</div>
+</div>
+
+<!-- ── TOAST ───────────────────────────────────────────────── -->
+<div id="toast" class="toast hidden"></div>
+
+<script src="shared.js?v=1"></script>
+<script src="admin.js?v=1"></script>
+</body>
+</html>
