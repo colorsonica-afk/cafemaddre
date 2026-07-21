@@ -2026,6 +2026,52 @@ function parsearPedidoVoz(textoCrudo) {
     }
   });
 
+  // Sabor mencionado suelto, sin decir el producto (ej. solo "durazno") — se infiere
+  // el producto dueño de ese sabor (rollito o baguette). Confianza baja siempre,
+  // por ser una inferencia. Corre sobre los tokens que quedaron libres.
+  function inferirPorSaborSuelto(sabores, prod) {
+    if (!sabores.length || !prod) return;
+    const candidatosSabor = sabores
+      .map(s => ({ sabor: s, palabras: posNormalizarTexto(s).split(" ").filter(Boolean) }))
+      .filter(c => c.palabras.length > 0)
+      .sort((a, b) => b.palabras.length - a.palabras.length);
+
+    candidatosSabor.forEach(({ sabor, palabras }) => {
+      const n = palabras.length;
+      const nombreNorm = palabras.join(" ");
+      const umbral = n === 1 ? 0.75 : 0.6;
+      while (true) {
+        let mejorIdx = -1, mejorScore = 0;
+        for (let i = 0; i <= tokens.length - n; i++) {
+          if (usado.slice(i, i + n).some(Boolean)) continue;
+          const ventana = tokens.slice(i, i + n).join(" ");
+          const score = ventana === nombreNorm
+            ? 1
+            : 1 - posLevenshtein(ventana, nombreNorm) / Math.max(ventana.length, nombreNorm.length, 1);
+          if (score > mejorScore) { mejorScore = score; mejorIdx = i; }
+        }
+        if (mejorIdx === -1 || mejorScore < umbral) break;
+
+        let cantidad = 1;
+        for (let back = 1; back <= 2; back++) {
+          const j = mejorIdx - back;
+          if (j < 0 || usado[j]) break;
+          const t = tokens[j];
+          if (/^\d+$/.test(t)) { cantidad = parseInt(t, 10); usado[j] = true; break; }
+          if (POS_NUMEROS_TEXTO[t] != null) { cantidad = POS_NUMEROS_TEXTO[t]; usado[j] = true; break; }
+        }
+
+        for (let k = 0; k < n; k++) usado[mejorIdx + k] = true;
+        encontrados.push({ idx: mejorIdx, nombre: prod.nombre, variedad: sabor, cantidad, precio: Number(prod.precio), confianzaBaja: true });
+      }
+    });
+  }
+  // "canela" queda afuera acá: es parte del nombre base del rollito, así que una
+  // mención suelta de "canela" que sobró sin consumir (ej. dicha de más junto a otro
+  // sabor real) no debe inventar un segundo rollito fantasma.
+  inferirPorSaborSuelto(saboresRollito.filter(s => posNormalizarTexto(s) !== "canela"), productos.find(p => p.nombre.includes("ROLLITO")));
+  inferirPorSaborSuelto(saboresBaguette, productos.find(p => p.nombre.includes("BAGUETTE")));
+
   // Devolver en el orden en que se mencionaron, no en el orden del catálogo
   return encontrados.sort((a, b) => a.idx - b.idx).map(({ idx, ...item }) => item);
 }
@@ -2069,12 +2115,26 @@ function posToggleGrabacion() {
 // Si la tanda nueva empieza igual que la anterior (o es un subconjunto de ella),
 // se trata como una corrección: se deshacen los ítems que había agregado la tanda
 // vieja y se reemplazan por los de la tanda nueva, más completa.
+// ¿"a" y "b" son básicamente la misma frase (una contenida en la otra, o muy
+// parecidas)? No solo prefijo: el motor a veces cambia palabras sueltas del
+// principio entre tanda y tanda (ej. "un capuchino" → "capuchino", sin el "un"),
+// así que "empieza igual" no alcanza — hace falta "una está adentro de la otra".
+function posTextosRelacionados(a, b) {
+  if (!a || !b) return false;
+  if (a === b || a.includes(b) || b.includes(a)) return true;
+  const sim = 1 - posLevenshtein(a, b) / Math.max(a.length, b.length, 1);
+  return sim >= 0.6;
+}
+
 function posProcesarTextoFinal(texto) {
   const ahora = Date.now();
   const textoNorm = posNormalizarTexto(texto);
   const anteriorNorm = posNormalizarTexto(posUltimoTexto);
-  const esContinuacion = posUltimoTexto && textoNorm && (ahora - posUltimoTextoTs) < 6000 &&
-    (textoNorm.startsWith(anteriorNorm) || anteriorNorm.startsWith(textoNorm));
+  // Sin límite de tiempo a propósito: en sesiones largas con reinicios automáticos
+  // (cada ~20s en algunos Android) el motor puede volver a captar/alucinar la misma
+  // palabra mucho después de la tanda anterior — lo que importa es si el contenido
+  // se repite o extiende, no cuánto pasó entre una tanda y la otra.
+  const esContinuacion = posUltimoTexto && textoNorm && posTextosRelacionados(textoNorm, anteriorNorm);
 
   if (esContinuacion && posUltimosItems.length) {
     posUltimosItems.forEach(it => {
@@ -2115,7 +2175,13 @@ function posIniciarReconocimiento(SR, intentos) {
 
   posRecognition = new SR();
   posRecognition.lang = "es-CO";
-  posRecognition.continuous = true;    // seguir escuchando a través de pausas, no cortar tras la primera frase
+  // continuous=false a propósito: en este dispositivo el modo "continuo" del
+  // navegador termina re-escuchando (o alucinando) la misma palabra varias veces
+  // dentro de una sola sesión larga. Con cada tanda como una escucha aislada y
+  // el reinicio inmediato de abajo, cada resultado es una captura limpia — el
+  // efecto de "seguir escuchando a través de pausas" lo da el auto-reinicio, no
+  // el modo continuo del navegador.
+  posRecognition.continuous = false;
   posRecognition.interimResults = true;
   posRecognition.maxAlternatives = 1;
 
