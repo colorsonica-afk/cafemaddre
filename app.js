@@ -1927,12 +1927,47 @@ function parsearPedidoVoz(textoCrudo) {
 
   // Productos de varias palabras primero, para que "ROLLITO DE CANELA" no le gane
   // el match a un "ROLLITO" suelto y se coma tokens que corresponden a otro ítem.
+  const saboresRollitoNorm = saboresRollito.map(s => posNormalizarTexto(s));
+  const saboresBaguetteNorm = saboresBaguette.map(s => posNormalizarTexto(s));
   const candidatos = productos
-    .map(p => ({ prod: p, palabras: posNormalizarTexto(p.nombre).split(" ").filter(Boolean) }))
+    .map(p => {
+      let palabras = posNormalizarTexto(p.nombre).split(" ").filter(Boolean);
+      // "ROLLITO DE CANELA" termina en "canela", que TAMBIÉN es un sabor válido —
+      // si se exige esa palabra para matchear el producto, un sabor distinto
+      // (ej. "durazno") se confunde con una mala transcripción de "canela" y se
+      // pierde. Se saca del nombre exigido y queda para que lo resuelva el sabor.
+      const sabores = p.nombre.includes("ROLLITO") ? saboresRollitoNorm
+        : p.nombre.includes("BAGUETTE") ? saboresBaguetteNorm : [];
+      const ultima = palabras[palabras.length - 1];
+      if (palabras.length > 1 && sabores.includes(ultima)) palabras = palabras.slice(0, -1);
+      return { prod: p, palabras };
+    })
     .filter(c => c.palabras.length > 0)
     .sort((a, b) => b.palabras.length - a.palabras.length);
 
+  // Atajo: si un producto de varias palabras tiene una palabra "distintiva" (la más
+  // larga, ignorando conectores) que no aparece en NINGÚN otro producto del catálogo,
+  // se agrega como alias de una sola palabra — así "rollito" solo (sin "de canela")
+  // también reconoce "ROLLITO DE CANELA", que es el único producto rollito que existe.
+  // Va SIEMPRE marcado como confianza baja por ser una inferencia parcial.
+  const STOPWORDS_ALIAS = new Set(["de", "con", "x", "y", "del", "la", "el", "los", "las", "al"]);
+  const palabraAProductos = {};
   candidatos.forEach(({ prod, palabras }) => {
+    new Set(palabras).forEach(w => {
+      (palabraAProductos[w] = palabraAProductos[w] || new Set()).add(prod.nombre);
+    });
+  });
+  candidatos.slice().forEach(({ prod, palabras }) => {
+    if (palabras.length <= 1) return;
+    const distintivas = palabras.filter(p => !STOPWORDS_ALIAS.has(p));
+    if (!distintivas.length) return;
+    const palabra = distintivas.reduce((a, b) => (b.length > a.length ? b : a));
+    if (palabraAProductos[palabra] && palabraAProductos[palabra].size === 1) {
+      candidatos.push({ prod, palabras: [palabra], esAlias: true });
+    }
+  });
+
+  candidatos.forEach(({ prod, palabras, esAlias }) => {
     const n = palabras.length;
     const nombreNorm = palabras.join(" ");
     const umbral = n === 1 ? 0.75 : 0.6;
@@ -1965,12 +2000,18 @@ function parsearPedidoVoz(textoCrudo) {
       // Se escanea token a token (no como un string único) para que conectores
       // como "con"/"y"/"un" no diluyan el score de coincidencia del sabor.
       let variedad = "";
-      let confianzaBaja = mejorScore < 0.95;
+      let confianzaBaja = mejorScore < 0.95 || !!esAlias;
       if (prod.nombre.includes("ROLLITO") || prod.nombre.includes("BAGUETTE")) {
         const sabores = prod.nombre.includes("ROLLITO") ? saboresRollito : saboresBaguette;
         const finProd = mejorIdx + n;
         const limiteSabor = Math.min(tokens.length, finProd + 5);
-        const matchSabor = buscarSaborEnVentana(tokens, usado, finProd, limiteSabor, sabores);
+        // "canela" es a la vez parte del nombre base ("rollito DE CANELA") y un sabor
+        // válido — se prueba primero cualquier OTRO sabor, y solo se cae en "canela"
+        // si no se dijo ningún otro (si no, "rollito de canela con nutella" agarraría
+        // "canela" antes de llegar a "nutella", que es el sabor real que se pidió).
+        const saboresSinCanela = sabores.filter(s => posNormalizarTexto(s) !== "canela");
+        const matchSabor = buscarSaborEnVentana(tokens, usado, finProd, limiteSabor, saboresSinCanela)
+          || buscarSaborEnVentana(tokens, usado, finProd, limiteSabor, sabores);
         if (matchSabor) {
           variedad = matchSabor.valor;
           for (let k = 0; k < matchSabor.n; k++) usado[matchSabor.idx + k] = true;
