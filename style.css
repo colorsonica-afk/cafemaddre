@@ -1808,7 +1808,7 @@ html, body {
 .eh-logo { font-size: 1.5rem; }
 .eh-name { font-family: 'Dancing Script', cursive; font-size: 1.4rem; }
 .eh-sub  { font-size: .72rem; opacity: .7; }
-.email-body-preview  { padding: 1rem; font-size: .85rem; color: var(--text); min-height: 3rem; line-height: 1.6; }
+.email-body-preview  { padding: 1rem; font-size: .85rem; color: var(--text); min-height: 3rem; line-height: 1.6; white-space: pre-line; }
 .email-footer-preview { background: var(--crema2); padding: .75rem; font-size: .72rem; color: var(--text-lt); text-align: center; }
 
 /* ── POS ─────────────────────────────────────────────────── */

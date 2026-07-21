@@ -1361,7 +1361,18 @@ async function loadAdminClientDetail(correo) {
 // ── ENVÍO MASIVO ──────────────────────────────────────────────
 function updateEmailPreview() {
   const msg = document.getElementById("masivo-mensaje").value;
-  document.getElementById("email-preview-body").textContent = msg || "Tu mensaje aparecerá aquí...";
+  const previewEl = document.getElementById("email-preview-body");
+  if (!msg) {
+    previewEl.textContent = "Tu mensaje aparecerá aquí...";
+    return;
+  }
+  // Si parece HTML (tiene una etiqueta), se renderiza tal cual para previsualizar
+  // cómo va a quedar de verdad — si no, se muestra como texto plano.
+  if (/<[a-z][\s\S]*>/i.test(msg)) {
+    previewEl.innerHTML = msg;
+  } else {
+    previewEl.textContent = msg;
+  }
 }
 
 async function enviarMasivo() {
