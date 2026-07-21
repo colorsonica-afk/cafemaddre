@@ -302,7 +302,9 @@ function enPerfilInvitado() {
 }
 function iniciarTimerRegistro() {
   clearTimeout(_registroTimer);
-  _registroTimer = setTimeout(() => { if (enPerfilInvitado()) abrirModalRegistro(); }, 60000);
+  // Antes esperaba 60s — ahora sale apenas se entra (delay chico solo para
+  // que la pantalla de invitado termine de renderizar primero).
+  _registroTimer = setTimeout(() => { if (enPerfilInvitado()) abrirModalRegistro(); }, 600);
 }
 
 function abrirModalRegistro() {
