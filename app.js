@@ -1663,6 +1663,8 @@ async function posRegistrarVenta(correo) {
     if (ptsEl) ptsEl.textContent = sumRes.puntosEntregados;
     if (topEl) topEl.textContent = sumRes.topProducto || "-";
     // Actualizar panel persistente
+    const resumenEl = document.getElementById("pos-pedidos-hoy-resumen");
+    if (resumenEl) resumenEl.textContent = `${sumRes.ventasHoy} venta(s) · $${(sumRes.totalHoy || 0).toLocaleString("es-CO")} hoy`;
     renderPedidosHoyList(sumRes.ultimas || []);
   }
 }
@@ -1699,11 +1701,16 @@ function posIrAdmin() {
 // ── POS: Pedidos de hoy (panel persistente) ───────────────────
 async function loadPedidosHoy() {
   const listEl = document.getElementById("pos-pedidos-hoy-list");
+  const resumenEl = document.getElementById("pos-pedidos-hoy-resumen");
   if (!listEl) return;
   const sumRes = await api("getDaySummary", { pin: state.posPin || "", adminPassword: state.adminPass || "" });
   if (!sumRes.ok) {
     listEl.innerHTML = "<p style='color:var(--text-lt);font-size:.82rem'>Sin conexión</p>";
+    if (resumenEl) resumenEl.textContent = "";
     return;
+  }
+  if (resumenEl) {
+    resumenEl.textContent = `${sumRes.ventasHoy} venta(s) · $${(sumRes.totalHoy || 0).toLocaleString("es-CO")} hoy`;
   }
   renderPedidosHoyList(sumRes.ultimas || []);
 }
