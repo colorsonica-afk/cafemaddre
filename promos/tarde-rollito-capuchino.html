@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es-CO">
+<head>
+<meta charset="UTF-8">
+<title>Promo — La tarde de hoy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Playfair+Display:ital,wght@0,700;1,400;1,700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --crema:      #FAF7F0;
+    --crema2:     #F0E8D8;
+    --crema3:     #E8DCC8;
+    --cafe:       #4A2E1A;
+    --cafe-md:    #5C3D2E;
+    --cafe-lt:    #8B6555;
+    --dorado:     #C8903A;
+    --dorado-lt:  #F5D98A;
+    --verde:      #3D5C35;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 1080px;
+    height: 1080px;
+    overflow: hidden;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .canvas {
+    position: relative;
+    width: 1080px;
+    height: 1080px;
+    background:
+      radial-gradient(circle at 85% 12%, rgba(200,144,58,0.16) 0%, transparent 42%),
+      radial-gradient(circle at 10% 90%, rgba(61,92,53,0.10) 0%, transparent 40%),
+      linear-gradient(175deg, var(--crema) 0%, var(--crema2) 55%, var(--crema3) 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: var(--cafe);
+    text-align: center;
+    padding: 80px 90px;
+  }
+
+  svg.icon { display: block; }
+  .brand {
+    font-family: 'Dancing Script', cursive;
+    font-weight: 700;
+    font-size: 40px;
+    color: var(--cafe-md);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .brand-icon { width: 34px; height: 28px; color: var(--dorado); }
+
+  .rule {
+    width: 64px;
+    height: 2px;
+    background: var(--dorado);
+    margin: 34px 0 30px;
+    opacity: .7;
+  }
+
+  .headline {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-weight: 700;
+    font-size: 58px;
+    line-height: 1.28;
+    color: var(--cafe);
+    max-width: 760px;
+  }
+  .headline strong {
+    font-style: normal;
+    color: var(--dorado);
+  }
+
+  .pairing {
+    margin-top: 56px;
+    display: flex;
+    align-items: center;
+    gap: 34px;
+  }
+  .item {
+    background: #fff;
+    border: 1.5px solid rgba(74,46,26,0.1);
+    border-radius: 24px;
+    padding: 38px 40px;
+    box-shadow: 0 14px 40px rgba(74,46,26,0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    width: 260px;
+  }
+  .item-emoji { font-size: 56px; }
+  .item-name {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    font-size: 25px;
+    line-height: 1.25;
+    color: var(--cafe);
+  }
+  .plus {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 46px;
+    color: var(--dorado);
+  }
+
+  .footer-pill {
+    margin-top: 64px;
+    background: var(--cafe);
+    color: var(--crema);
+    border-radius: 999px;
+    padding: 20px 46px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 700;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 10px 30px rgba(74,46,26,0.25);
+  }
+  .footer-pill .sep { opacity: .5; font-weight: 400; }
+  .footer-pill .hora { color: var(--dorado-lt); }
+
+  .tag {
+    position: absolute;
+    bottom: 56px;
+    font-size: 16px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--cafe-lt);
+  }
+
+  .deco { position: absolute; color: var(--dorado); opacity: .28; }
+  .deco.d1 { top: 88px; right: 96px; width: 44px; height: 36px; transform: rotate(16deg); }
+  .deco.d2 { bottom: 150px; left: 84px; width: 34px; height: 28px; transform: rotate(-10deg); opacity: .22; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="mariposa" viewBox="0 0 120 100">
+    <path fill="currentColor" d="M60 50 C 55 20, 20 5, 8 20 C -2 33, 15 55, 60 50 Z"/>
+    <path fill="currentColor" opacity="0.85" d="M60 50 C 57 75, 30 92, 18 82 C 8 73, 20 55, 60 50 Z"/>
+    <path fill="currentColor" d="M60 50 C 65 20, 100 5, 112 20 C 122 33, 105 55, 60 50 Z"/>
+    <path fill="currentColor" opacity="0.85" d="M60 50 C 63 75, 90 92, 102 82 C 112 73, 100 55, 60 50 Z"/>
+    <rect fill="currentColor" x="56" y="34" width="8" height="48" rx="4"/>
+  </symbol>
+</svg>
+
+<div class="canvas">
+  <svg class="deco d1"><use href="#mariposa"/></svg>
+  <svg class="deco d2"><use href="#mariposa"/></svg>
+
+  <div class="brand"><svg class="brand-icon"><use href="#mariposa"/></svg> maddre</div>
+  <div class="rule"></div>
+
+  <p class="headline">La tarde de hoy está<br>para un <strong>rollito de canela</strong><br>y un <strong>capuchino</strong></p>
+
+  <div class="pairing">
+    <div class="item">
+      <span class="item-emoji">🌀</span>
+      <span class="item-name">Rollito de<br>Canela</span>
+    </div>
+    <span class="plus">+</span>
+    <div class="item">
+      <span class="item-emoji">☕</span>
+      <span class="item-name">Capuchino</span>
+    </div>
+  </div>
+
+  <div class="footer-pill">
+    <span>Nos vemos en Maddre</span>
+    <span class="sep">·</span>
+    <span class="hora">3 – 7 PM</span>
+  </div>
+
+  <p class="tag">Café Maddre · El barrio se endulza contigo</p>
+</div>
+</body>
+</html>
