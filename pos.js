@@ -716,13 +716,13 @@ function parsearPedidoVoz(textoCrudo) {
 }
 
 function posAgregarItemsDesdeVoz(items) {
-  if (!items.length) { toast("🎤 No se reconoció ningún producto — probá de nuevo"); return; }
+  if (!items.length) { toast("🎤 No se reconoció ningún producto — prueba de nuevo"); return; }
   items.forEach(it => posState.items.push(it));
   renderItemsList();
   syncMesaItems();
   const dudosos = items.filter(i => i.confianzaBaja).length;
   toast(dudosos
-    ? `🎤 ${items.length} producto(s) agregado(s) — revisá ${dudosos} marcado(s) con ⚠️`
+    ? `🎤 ${items.length} producto(s) agregado(s) — revisa ${dudosos} marcado(s) con ⚠️`
     : `🎤 ${items.length} producto(s) agregado(s)`);
 }
 
@@ -808,7 +808,7 @@ function posIniciarReconocimiento(SR, intentos) {
   if (intentos > 3) {
     posGrabando = false;
     if (btn) { btn.textContent = "🎤 Grabar"; btn.classList.remove("recording"); }
-    if (status) status.textContent = "Se cortó el micrófono — tocá Grabar para seguir";
+    if (status) status.textContent = "Se cortó el micrófono — toca Grabar para seguir";
     return;
   }
 

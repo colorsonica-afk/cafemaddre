@@ -13,7 +13,7 @@ const POS_PIN_CLIENT = "__pin__"; // marcador interno: "ya hay un PIN de staff v
 // nueva: crear el archivo en /emails/ y sumarlo a esta lista.
 const PLANTILLAS_CORREO = [
   { nombre: "🌀 Promo 2x1 Frutos Rojos", archivo: "emails/2x1-frutos-rojos.html" },
-  { nombre: "📱 Escaneá y entrá al club (QR)", archivo: "emails/2-qr-app.html" },
+  { nombre: "📱 Escanea y entra al club (QR)", archivo: "emails/2-qr-app.html" },
 ];
 
 function initPlantillasCorreo() {
