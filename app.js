@@ -2002,6 +2002,8 @@ function posAgregarItemsDesdeVoz(items) {
 
 let posRecognition = null;
 let posGrabando = false; // intención de la mesera: sigue querendo grabar hasta que toque "Detener"
+let posUltimoTexto = "";   // último texto final procesado, para no duplicar si el motor
+let posUltimoTextoTs = 0;  // reinicia solo y vuelve a captar la misma frase que se estaba diciendo
 
 function posToggleGrabacion() {
   if (posGrabando) {
@@ -2009,6 +2011,8 @@ function posToggleGrabacion() {
     posRecognition?.stop();
     return;
   }
+  posUltimoTexto = "";
+  posUltimoTextoTs = 0;
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) { toast("Este navegador no soporta reconocimiento de voz"); return; }
   posGrabando = true;
@@ -2048,9 +2052,13 @@ function posIniciarReconocimiento(SR, intentos) {
     for (let i = e.resultIndex; i < e.results.length; i++) {
       const res = e.results[i];
       if (res.isFinal) {
-        const texto = res[0].transcript;
+        const texto = res[0].transcript.trim();
+        const ahora = Date.now();
+        const esDuplicado = texto && texto === posUltimoTexto && (ahora - posUltimoTextoTs) < 4000;
+        posUltimoTexto = texto;
+        posUltimoTextoTs = ahora;
         if (status) status.textContent = `"${texto}"`;
-        posAgregarItemsDesdeVoz(parsearPedidoVoz(texto));
+        if (!esDuplicado) posAgregarItemsDesdeVoz(parsearPedidoVoz(texto));
       } else {
         interim += res[0].transcript;
       }
