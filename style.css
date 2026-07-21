@@ -1448,6 +1448,17 @@ html, body {
   white-space: nowrap;
 }
 .pos-pedido-edit-btn:hover { background: var(--crema-dark); }
+.pos-pedido-del-btn {
+  font-size: .68rem;
+  color: #C0392B;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: .15rem .5rem;
+  cursor: pointer;
+  margin-top: .2rem;
+}
+.pos-pedido-del-btn:hover { background: var(--crema-dark); }
 
 /* Edición inline en admin */
 .admin-pedido-row {

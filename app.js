@@ -1727,7 +1727,11 @@ function renderPedidosHoyList(ultimas) {
       <div style="text-align:right;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:.15rem">
         <p class="dia-pedido-total">$${(v.total||0).toLocaleString("es-CO")}</p>
         <p class="dia-pedido-hora">${v.hora}</p>
-        ${v.id ? `<button class="pos-pedido-edit-btn" data-id="${v.id}">✏️ Editar</button>` : ""}
+        ${v.id ? `
+          <div style="display:flex;gap:.4rem">
+            <button class="pos-pedido-edit-btn" data-id="${v.id}">✏️ Editar</button>
+            <button class="pos-pedido-del-btn" data-id="${v.id}">🗑</button>
+          </div>` : ""}
       </div>`;
     // Adjuntar datos seguros en el botón para evitar problemas con comillas/HTML
     const editBtn = row.querySelector(".pos-pedido-edit-btn");
@@ -1738,8 +1742,22 @@ function renderPedidosHoyList(ultimas) {
         posEditarVenta(d.id, d.productos, d.sector);
       });
     }
+    const delBtn = row.querySelector(".pos-pedido-del-btn");
+    if (delBtn) {
+      delBtn.addEventListener("click", () => posEliminarVenta(v.id, v.productos));
+    }
     listEl.appendChild(row);
   });
+}
+
+async function posEliminarVenta(id, productos) {
+  if (!confirm("¿Borrar este pedido?\n" + productos)) return;
+  showLoading();
+  const res = await api("eliminarVenta", { id, pin: state.posPin || "" });
+  hideLoading();
+  if (!res.ok) { toast("❌ " + (res.error || "Error")); return; }
+  toast("🗑 Pedido eliminado");
+  await loadPedidosHoy();
 }
 
 // Parsea string "PRODUCTO (VAR) x2, OTRO x1" → array de items con precios
