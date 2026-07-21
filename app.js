@@ -1862,51 +1862,106 @@ function posMejorMatch(textoNorm, candidatos) {
   return mejor && mejor.score >= 0.45 ? mejor : null;
 }
 
-function posExtraerCantidad(fragmento) {
-  const digito = fragmento.match(/\b(\d+)\b/);
-  if (digito) return { cantidad: parseInt(digito[1], 10), resto: fragmento.replace(digito[0], " ") };
-  for (const palabra of Object.keys(POS_NUMEROS_TEXTO)) {
-    const re = new RegExp(`\\b${palabra}\\b`);
-    if (re.test(fragmento)) return { cantidad: POS_NUMEROS_TEXTO[palabra], resto: fragmento.replace(re, " ") };
-  }
-  return { cantidad: 1, resto: fragmento };
+// Busca el mejor sabor (uno o varios tokens) dentro de tokens[inicio, limite),
+// ignorando posiciones ya usadas. Igual criterio que el matching de productos:
+// n-gramas exactos por posición, no un string único (evita que conectores diluyan el score).
+function buscarSaborEnVentana(tokens, usado, inicio, limite, sabores) {
+  const candidatosSabor = sabores
+    .map(s => ({ sabor: s, palabras: posNormalizarTexto(s).split(" ").filter(Boolean) }))
+    .filter(c => c.palabras.length > 0)
+    .sort((a, b) => b.palabras.length - a.palabras.length);
+
+  let mejor = null;
+  candidatosSabor.forEach(({ sabor, palabras }) => {
+    const n = palabras.length;
+    const nombreNorm = palabras.join(" ");
+    for (let i = inicio; i <= limite - n; i++) {
+      if (usado.slice(i, i + n).some(Boolean)) continue;
+      const ventana = tokens.slice(i, i + n).join(" ");
+      const score = ventana === nombreNorm
+        ? 1
+        : 1 - posLevenshtein(ventana, nombreNorm) / Math.max(ventana.length, nombreNorm.length, 1);
+      if (score >= 0.55 && (!mejor || score > mejor.score)) mejor = { idx: i, n, valor: sabor, score };
+    }
+  });
+  return mejor;
 }
 
 // Texto transcripto → array de items {nombre, variedad, cantidad, precio, confianzaBaja}
+// Escanea TODO el texto buscando cada producto del catálogo (no depende de "y"/comas
+// como separador, porque el reconocimiento de voz casi nunca transcribe comas y una
+// enumeración como "un moca, un capuchino y un latte" solo trae un "y" para 3 ítems).
 function parsearPedidoVoz(textoCrudo) {
   const productos = posState.config?.productos || [];
   const saboresRollito = posState.config?.saboresRollito || [];
   const saboresBaguette = posState.config?.saboresBaguette || [];
-  const nombresProducto = productos.map(p => p.nombre);
 
-  const fragmentos = posNormalizarTexto(textoCrudo)
-    .split(/\by\b|,/).map(f => f.trim()).filter(Boolean);
-  const items = [];
+  const tokens = posNormalizarTexto(textoCrudo).split(" ").filter(Boolean);
+  const usado = new Array(tokens.length).fill(false);
+  const encontrados = [];
 
-  fragmentos.forEach(frag => {
-    const { cantidad, resto } = posExtraerCantidad(frag);
-    const matchProducto = posMejorMatch(resto, nombresProducto);
-    if (!matchProducto) return;
+  // Productos de varias palabras primero, para que "ROLLITO DE CANELA" no le gane
+  // el match a un "ROLLITO" suelto y se coma tokens que corresponden a otro ítem.
+  const candidatos = productos
+    .map(p => ({ prod: p, palabras: posNormalizarTexto(p.nombre).split(" ").filter(Boolean) }))
+    .filter(c => c.palabras.length > 0)
+    .sort((a, b) => b.palabras.length - a.palabras.length);
 
-    const prod = productos.find(p => p.nombre === matchProducto.valor);
-    let variedad = "";
-    let confianzaBaja = matchProducto.score < 0.7;
+  candidatos.forEach(({ prod, palabras }) => {
+    const n = palabras.length;
+    const nombreNorm = palabras.join(" ");
+    const umbral = n === 1 ? 0.75 : 0.6;
 
-    if (matchProducto.valor.includes("ROLLITO") || matchProducto.valor.includes("BAGUETTE")) {
-      const sabores = matchProducto.valor.includes("ROLLITO") ? saboresRollito : saboresBaguette;
-      const matchSabor = posMejorMatch(resto, sabores);
-      if (matchSabor) {
-        variedad = matchSabor.valor;
-        if (matchSabor.score < 0.7) confianzaBaja = true;
-      } else {
-        confianzaBaja = true; // rollito/baguette sin sabor reconocido — revisar a mano
+    // Repetir mientras se sigan encontrando menciones de este producto
+    // (ej. "dos capuchinos y otro capuchino" = 2 ítems separados)
+    while (true) {
+      let mejorIdx = -1, mejorScore = 0;
+      for (let i = 0; i <= tokens.length - n; i++) {
+        if (usado.slice(i, i + n).some(Boolean)) continue;
+        const ventana = tokens.slice(i, i + n).join(" ");
+        const score = ventana === nombreNorm
+          ? 1
+          : 1 - posLevenshtein(ventana, nombreNorm) / Math.max(ventana.length, nombreNorm.length, 1);
+        if (score > mejorScore) { mejorScore = score; mejorIdx = i; }
       }
-    }
+      if (mejorIdx === -1 || mejorScore < umbral) break;
 
-    items.push({ nombre: matchProducto.valor, variedad, cantidad, precio: Number(prod.precio), confianzaBaja });
+      // Cantidad: mirar hasta 2 tokens antes del match (dígito o número en palabras)
+      let cantidad = 1;
+      for (let back = 1; back <= 2; back++) {
+        const j = mejorIdx - back;
+        if (j < 0 || usado[j]) break;
+        const t = tokens[j];
+        if (/^\d+$/.test(t)) { cantidad = parseInt(t, 10); usado[j] = true; break; }
+        if (POS_NUMEROS_TEXTO[t] != null) { cantidad = POS_NUMEROS_TEXTO[t]; usado[j] = true; break; }
+      }
+
+      // Sabor: mirar hasta 5 tokens después del match (solo para rollito/baguette).
+      // Se escanea token a token (no como un string único) para que conectores
+      // como "con"/"y"/"un" no diluyan el score de coincidencia del sabor.
+      let variedad = "";
+      let confianzaBaja = mejorScore < 0.95;
+      if (prod.nombre.includes("ROLLITO") || prod.nombre.includes("BAGUETTE")) {
+        const sabores = prod.nombre.includes("ROLLITO") ? saboresRollito : saboresBaguette;
+        const finProd = mejorIdx + n;
+        const limiteSabor = Math.min(tokens.length, finProd + 5);
+        const matchSabor = buscarSaborEnVentana(tokens, usado, finProd, limiteSabor, sabores);
+        if (matchSabor) {
+          variedad = matchSabor.valor;
+          for (let k = 0; k < matchSabor.n; k++) usado[matchSabor.idx + k] = true;
+          if (matchSabor.score < 0.75) confianzaBaja = true;
+        } else {
+          confianzaBaja = true; // rollito/baguette sin sabor reconocido — revisar a mano
+        }
+      }
+
+      for (let k = 0; k < n; k++) usado[mejorIdx + k] = true;
+      encontrados.push({ idx: mejorIdx, nombre: prod.nombre, variedad, cantidad, precio: Number(prod.precio), confianzaBaja });
+    }
   });
 
-  return items;
+  // Devolver en el orden en que se mencionaron, no en el orden del catálogo
+  return encontrados.sort((a, b) => a.idx - b.idx).map(({ idx, ...item }) => item);
 }
 
 function posAgregarItemsDesdeVoz(items) {
