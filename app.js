@@ -2012,12 +2012,23 @@ function posToggleGrabacion() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) { toast("Este navegador no soporta reconocimiento de voz"); return; }
   posGrabando = true;
-  posIniciarReconocimiento(SR);
+  posIniciarReconocimiento(SR, 0);
 }
 
-function posIniciarReconocimiento(SR) {
+// `intentos` cuenta reinicios seguidos SIN haber reconocido nada — protege contra
+// un navegador que corta el motor una y otra vez sin dejarlo arrancar de nuevo
+// (ej. permiso de mic que expira en sesiones largas). Si de verdad reconoce algo,
+// el contador se resetea, así que una grabación larga con pausas normales no corta.
+function posIniciarReconocimiento(SR, intentos) {
   const btn = document.getElementById("pos-mic-btn");
   const status = document.getElementById("pos-mic-status");
+
+  if (intentos > 3) {
+    posGrabando = false;
+    if (btn) { btn.textContent = "🎤 Grabar"; btn.classList.remove("recording"); }
+    if (status) status.textContent = "Se cortó el micrófono — tocá Grabar para seguir";
+    return;
+  }
 
   posRecognition = new SR();
   posRecognition.lang = "es-CO";
@@ -2025,11 +2036,14 @@ function posIniciarReconocimiento(SR) {
   posRecognition.interimResults = true;
   posRecognition.maxAlternatives = 1;
 
+  let huboResultado = false;
+
   posRecognition.onstart = () => {
     if (btn) { btn.textContent = "⏹ Detener"; btn.classList.add("recording"); }
     if (status) status.textContent = "Escuchando…";
   };
   posRecognition.onresult = (e) => {
+    huboResultado = true;
     let interim = "";
     for (let i = e.resultIndex; i < e.results.length; i++) {
       const res = e.results[i];
@@ -2051,16 +2065,21 @@ function posIniciarReconocimiento(SR) {
     // otros errores (ej. "no-speech") se dejan pasar: onend decide si reiniciar
   };
   posRecognition.onend = () => {
-    if (posGrabando) {
-      // El navegador cortó el reconocimiento solo (silencio/timeout interno),
-      // pero la mesera todavía no tocó "Detener" — se reinicia sin que se note.
-      posIniciarReconocimiento(SR);
-    } else if (btn) {
-      btn.textContent = "🎤 Grabar";
-      btn.classList.remove("recording");
+    if (!posGrabando) {
+      if (btn) { btn.textContent = "🎤 Grabar"; btn.classList.remove("recording"); }
+      return;
     }
+    // El navegador cortó el reconocimiento solo (silencio/timeout interno),
+    // pero la mesera todavía no tocó "Detener" — se reinicia sin que se note.
+    const siguiente = huboResultado ? 0 : intentos + 1;
+    setTimeout(() => { if (posGrabando) posIniciarReconocimiento(SR, siguiente); }, 300);
   };
-  posRecognition.start();
+
+  try {
+    posRecognition.start();
+  } catch (e) {
+    setTimeout(() => { if (posGrabando) posIniciarReconocimiento(SR, intentos + 1); }, 300);
+  }
 }
 
 // ── ADMIN: Pedidos de hoy ─────────────────────────────────────
