@@ -29,7 +29,8 @@ async function cargarPlantillaCorreo() {
   if (!archivo) return;
   showLoading();
   try {
-    const res = await fetch(archivo);
+    // Sin cache: bust con timestamp para no servir una version vieja del template
+    const res = await fetch(archivo + "?t=" + Date.now(), { cache: "no-store" });
     const html = await res.text();
     const doc = new DOMParser().parseFromString(html, "text/html");
     const contenido = doc.querySelector("#email-contenido");
