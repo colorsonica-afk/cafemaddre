@@ -2002,8 +2002,9 @@ function posAgregarItemsDesdeVoz(items) {
 
 let posRecognition = null;
 let posGrabando = false; // intención de la mesera: sigue querendo grabar hasta que toque "Detener"
-let posUltimoTexto = "";   // último texto final procesado, para no duplicar si el motor
-let posUltimoTextoTs = 0;  // reinicia solo y vuelve a captar la misma frase que se estaba diciendo
+let posUltimoTexto = "";     // texto de la última tanda "final" procesada
+let posUltimoTextoTs = 0;    // cuándo se procesó, para saber si la siguiente tanda es continuación
+let posUltimosItems = [];    // ítems que agregó esa última tanda (para poder deshacerlos si era un refinamiento)
 
 function posToggleGrabacion() {
   if (posGrabando) {
@@ -2013,10 +2014,47 @@ function posToggleGrabacion() {
   }
   posUltimoTexto = "";
   posUltimoTextoTs = 0;
+  posUltimosItems = [];
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) { toast("Este navegador no soporta reconocimiento de voz"); return; }
   posGrabando = true;
   posIniciarReconocimiento(SR, 0);
+}
+
+// Procesa una tanda de texto "final" del reconocedor. En modo continuo, el motor
+// a veces no separa limpio: re-emite la misma frase que se venía diciendo, cada vez
+// un poco más completa (ej. "un rollito de canela" → "un rollito de canela" de nuevo
+// → "un rollito de canela de durazno"), en vez de una sola tanda por pausa real.
+// Si la tanda nueva empieza igual que la anterior (o es un subconjunto de ella),
+// se trata como una corrección: se deshacen los ítems que había agregado la tanda
+// vieja y se reemplazan por los de la tanda nueva, más completa.
+function posProcesarTextoFinal(texto) {
+  const ahora = Date.now();
+  const textoNorm = posNormalizarTexto(texto);
+  const anteriorNorm = posNormalizarTexto(posUltimoTexto);
+  const esContinuacion = posUltimoTexto && textoNorm && (ahora - posUltimoTextoTs) < 6000 &&
+    (textoNorm.startsWith(anteriorNorm) || anteriorNorm.startsWith(textoNorm));
+
+  if (esContinuacion && posUltimosItems.length) {
+    posUltimosItems.forEach(it => {
+      const idx = posState.items.indexOf(it);
+      if (idx !== -1) posState.items.splice(idx, 1);
+    });
+  }
+
+  posUltimoTexto = texto;
+  posUltimoTextoTs = ahora;
+
+  const items = parsearPedidoVoz(texto);
+  posUltimosItems = items;
+
+  if (items.length) {
+    posAgregarItemsDesdeVoz(items);
+  } else if (esContinuacion) {
+    // La tanda nueva no reconoció nada pero sí borramos lo de la tanda vieja — refrescar la lista
+    renderItemsList();
+    syncMesaItems();
+  }
 }
 
 // `intentos` cuenta reinicios seguidos SIN haber reconocido nada — protege contra
@@ -2053,12 +2091,8 @@ function posIniciarReconocimiento(SR, intentos) {
       const res = e.results[i];
       if (res.isFinal) {
         const texto = res[0].transcript.trim();
-        const ahora = Date.now();
-        const esDuplicado = texto && texto === posUltimoTexto && (ahora - posUltimoTextoTs) < 4000;
-        posUltimoTexto = texto;
-        posUltimoTextoTs = ahora;
         if (status) status.textContent = `"${texto}"`;
-        if (!esDuplicado) posAgregarItemsDesdeVoz(parsearPedidoVoz(texto));
+        posProcesarTextoFinal(texto);
       } else {
         interim += res[0].transcript;
       }
