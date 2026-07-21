@@ -2001,37 +2001,64 @@ function posAgregarItemsDesdeVoz(items) {
 }
 
 let posRecognition = null;
-let posGrabando = false;
+let posGrabando = false; // intención de la mesera: sigue querendo grabar hasta que toque "Detener"
 
 function posToggleGrabacion() {
-  if (posGrabando) { posRecognition?.stop(); return; }
-
+  if (posGrabando) {
+    posGrabando = false;
+    posRecognition?.stop();
+    return;
+  }
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { toast("Este navegador no soporta reconocimiento de voz"); return; }
+  posGrabando = true;
+  posIniciarReconocimiento(SR);
+}
+
+function posIniciarReconocimiento(SR) {
   const btn = document.getElementById("pos-mic-btn");
   const status = document.getElementById("pos-mic-status");
-  if (!SR) { toast("Este navegador no soporta reconocimiento de voz"); return; }
 
   posRecognition = new SR();
   posRecognition.lang = "es-CO";
-  posRecognition.interimResults = false;
+  posRecognition.continuous = true;    // seguir escuchando a través de pausas, no cortar tras la primera frase
+  posRecognition.interimResults = true;
   posRecognition.maxAlternatives = 1;
 
   posRecognition.onstart = () => {
-    posGrabando = true;
     if (btn) { btn.textContent = "⏹ Detener"; btn.classList.add("recording"); }
     if (status) status.textContent = "Escuchando…";
   };
   posRecognition.onresult = (e) => {
-    const texto = e.results[0][0].transcript;
-    if (status) status.textContent = `"${texto}"`;
-    posAgregarItemsDesdeVoz(parsearPedidoVoz(texto));
+    let interim = "";
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const res = e.results[i];
+      if (res.isFinal) {
+        const texto = res[0].transcript;
+        if (status) status.textContent = `"${texto}"`;
+        posAgregarItemsDesdeVoz(parsearPedidoVoz(texto));
+      } else {
+        interim += res[0].transcript;
+      }
+    }
+    if (interim && status) status.textContent = `"${interim}…"`;
   };
   posRecognition.onerror = (e) => {
-    if (status) status.textContent = "Error: " + e.error;
+    if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+      posGrabando = false;
+      if (status) status.textContent = "Permiso de micrófono denegado";
+    }
+    // otros errores (ej. "no-speech") se dejan pasar: onend decide si reiniciar
   };
   posRecognition.onend = () => {
-    posGrabando = false;
-    if (btn) { btn.textContent = "🎤 Grabar"; btn.classList.remove("recording"); }
+    if (posGrabando) {
+      // El navegador cortó el reconocimiento solo (silencio/timeout interno),
+      // pero la mesera todavía no tocó "Detener" — se reinicia sin que se note.
+      posIniciarReconocimiento(SR);
+    } else if (btn) {
+      btn.textContent = "🎤 Grabar";
+      btn.classList.remove("recording");
+    }
   };
   posRecognition.start();
 }
