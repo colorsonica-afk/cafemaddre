@@ -96,7 +96,7 @@ function posProductoChange() {
   chipsEl.innerHTML = "";
 
   let sabores = [];
-  if (nombre.includes("ROLLITO")) sabores = posState.config.saboresRollito || [];
+  if (nombre.includes("ROLLITO") || nombre.includes("WAFFLE")) sabores = posState.config.saboresRollito || [];
   else if (nombre.includes("BAGUETTE")) sabores = posState.config.saboresBaguette || [];
 
   if (sabores.length) {
@@ -575,7 +575,7 @@ function parsearPedidoVoz(textoCrudo) {
       // si se exige esa palabra para matchear el producto, un sabor distinto
       // (ej. "durazno") se confunde con una mala transcripción de "canela" y se
       // pierde. Se saca del nombre exigido y queda para que lo resuelva el sabor.
-      const sabores = p.nombre.includes("ROLLITO") ? saboresRollitoNorm
+      const sabores = p.nombre.includes("ROLLITO") || p.nombre.includes("WAFFLE") ? saboresRollitoNorm
         : p.nombre.includes("BAGUETTE") ? saboresBaguetteNorm : [];
       const ultima = palabras[palabras.length - 1];
       if (palabras.length > 1 && sabores.includes(ultima)) palabras = palabras.slice(0, -1);
@@ -640,8 +640,8 @@ function parsearPedidoVoz(textoCrudo) {
       // como "con"/"y"/"un" no diluyan el score de coincidencia del sabor.
       let variedad = "";
       let confianzaBaja = mejorScore < 0.95 || !!esAlias;
-      if (prod.nombre.includes("ROLLITO") || prod.nombre.includes("BAGUETTE")) {
-        const sabores = prod.nombre.includes("ROLLITO") ? saboresRollito : saboresBaguette;
+      if (prod.nombre.includes("ROLLITO") || prod.nombre.includes("WAFFLE") || prod.nombre.includes("BAGUETTE")) {
+        const sabores = prod.nombre.includes("ROLLITO") || prod.nombre.includes("WAFFLE") ? saboresRollito : saboresBaguette;
         const finProd = mejorIdx + n;
         const limiteSabor = Math.min(tokens.length, finProd + 5);
         // "canela" es a la vez parte del nombre base ("rollito DE CANELA") y un sabor
