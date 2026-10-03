@@ -56,7 +56,7 @@ const TK_EMOJIS = [
   ["PAN", "🍞"], ["CAMPESINO", "🌾"], ["SANDIWCH", "🥪"], ["SANDWICH", "🥪"],
   ["TINTO", "☕"], ["LATTE", "🥛"], ["AROMATICA", "🍵"], ["CAPUCHINO", "☕"],
   ["MOCA", "🍫"], ["MOKA", "🍫"], ["MILO", "🥤"], ["SODA", "🫧"], ["BAILEYS", "🥃"],
-  ["MALTEADA", "🍨"], ["PASTEL", "🍰"], ["EMPANADA", "🥟"], ["DEDITO", "🧀"],
+  ["MALTEADA", "🍨"], ["PASTEL", "🥮"], ["TORTA", "🍌"], ["EMPANADA", "🥟"], ["DEDITO", "🧀"],
   ["TALLER", "🎨"], ["CAFE X", "🫘"], ["GRANO", "🫘"], ["GALLETA", "🍪"],
   ["JUGO", "🧃"], ["AGUA", "💧"], ["TE ", "🍵"], ["CAFE", "☕"],
 ];
@@ -77,6 +77,52 @@ const TK_ICONOS = {
       fill="#FFF8EE" stroke="#EADBC6" stroke-width=".8"/>
     <ellipse cx="22" cy="20" rx="4" ry="1.4" fill="#fff" opacity=".9"/>
     <circle cx="44" cy="44" r="1" fill="#7E3F15"/><circle cx="20" cy="42" r=".9" fill="#7E3F15"/><circle cx="34" cy="49" r=".9" fill="#7E3F15"/>
+  </svg>`,
+  // Pastel de hojaldre: cuadrado dorado con capas
+  PASTEL: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="tkHojLado" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#F2BE6E"/><stop offset="1" stop-color="#CF8434"/>
+      </linearGradient>
+      <radialGradient id="tkHojTapa" cx="40%" cy="30%" r="80%">
+        <stop offset="0" stop-color="#FFE3A8"/><stop offset=".55" stop-color="#EFAE55"/><stop offset="1" stop-color="#C77A2C"/>
+      </radialGradient>
+    </defs>
+    <ellipse cx="32" cy="56" rx="26" ry="3.2" fill="#000" opacity=".13"/>
+    <path d="M7 30 h50 v18 q0 6 -6 6 h-38 q-6 0 -6 -6 z" fill="url(#tkHojLado)" stroke="#A9601E" stroke-width="1.5"/>
+    <g fill="none" stroke-linecap="round">
+      <path d="M8 34 q4 -1.5 8 0 t8 0 t8 0 t8 0 t8 0 t8 0" stroke="#FFE9BD" stroke-width="1.7"/>
+      <path d="M8 37.5 q4 1.5 8 0 t8 0 t8 0 t8 0 t8 0 t8 0" stroke="#A9601E" stroke-width="1" opacity=".55"/>
+      <path d="M8 41 q4 -1.5 8 0 t8 0 t8 0 t8 0 t8 0 t8 0" stroke="#FFE9BD" stroke-width="1.7"/>
+      <path d="M8 44.5 q4 1.5 8 0 t8 0 t8 0 t8 0 t8 0 t8 0" stroke="#A9601E" stroke-width="1" opacity=".55"/>
+      <path d="M9 48 q4 -1.5 8 0 t8 0 t8 0 t8 0 t8 0 t7 0" stroke="#FFE9BD" stroke-width="1.6"/>
+    </g>
+    <path d="M5 26 q0 -12 10 -12 h34 q10 0 10 12 q0 7 -9 7 h-36 q-9 0 -9 -7 z" fill="url(#tkHojTapa)" stroke="#B26A22" stroke-width="1.5"/>
+    <ellipse cx="22" cy="19" rx="9" ry="2.4" fill="#fff" opacity=".5"/>
+    <g fill="#B8702A" opacity=".55">
+      <circle cx="40" cy="22" r="1"/><circle cx="47" cy="25" r=".8"/><circle cx="15" cy="27" r=".8"/><circle cx="33" cy="27" r=".7"/>
+    </g>
+  </svg>`,
+  // Torta de banano: tajada con rodajas de banano encima
+  TORTA: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="tkTorMiga" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#F0CB8A"/><stop offset="1" stop-color="#D59A55"/>
+      </linearGradient>
+    </defs>
+    <ellipse cx="32" cy="57" rx="24" ry="3.2" fill="#000" opacity=".13"/>
+    <path d="M9 53 V28 Q9 15 32 15 Q55 15 55 28 V53 Z" fill="#8A4B1F"/>
+    <path d="M13 51 V29 Q13 19 32 19 Q51 19 51 29 V51 Z" fill="url(#tkTorMiga)"/>
+    <g fill="#6E3A16" opacity=".75">
+      <circle cx="20" cy="30" r="1.1"/><circle cx="29" cy="36" r="1.3"/><circle cx="41" cy="31" r="1"/>
+      <circle cx="23" cy="43" r="1.2"/><circle cx="36" cy="45" r="1"/><circle cx="44" cy="40" r="1.3"/><circle cx="33" cy="27" r=".9"/>
+    </g>
+    <g>
+      <ellipse cx="22" cy="15" rx="7.5" ry="5" fill="#FBEBB0" stroke="#D9B85A" stroke-width="1.4"/>
+      <ellipse cx="42" cy="15" rx="7.5" ry="5" fill="#FBEBB0" stroke="#D9B85A" stroke-width="1.4"/>
+      <ellipse cx="32" cy="11.5" rx="7.5" ry="5" fill="#FDF1C4" stroke="#D9B85A" stroke-width="1.4"/>
+      <g fill="#B08A3A"><circle cx="22" cy="15" r=".9"/><circle cx="42" cy="15" r=".9"/><circle cx="32" cy="11.5" r=".9"/></g>
+    </g>
   </svg>`,
 };
 
