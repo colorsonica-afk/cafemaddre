@@ -2180,3 +2180,6 @@ html, body {
 }
 .tk-ico { display: inline-block; width: 1em; height: 1em; vertical-align: -0.12em; }
 .tk-ico svg { width: 100%; height: 100%; display: block; }
+
+/* Botón secundario deshabilitado (p. ej. "Borrar pedido" con el ticket vacío) */
+.btn-ghost:disabled { opacity: .4; cursor: default; }

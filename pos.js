@@ -10,8 +10,8 @@
 
 // ── Entrada a la caja ──────────────────────────────────────────
 window.addEventListener("load", () => setTimeout(() => {
-  const savedPin    = sessionStorage.getItem("maddre_pos_pin");
-  const savedNombre = sessionStorage.getItem("maddre_pos_nombre");
+  const savedPin    = localStorage.getItem("maddre_pos_pin");
+  const savedNombre = localStorage.getItem("maddre_pos_nombre");
   const bypass      = sessionStorage.getItem("maddre_pos_bypass");
   if (bypass) {
     sessionStorage.removeItem("maddre_pos_bypass");
@@ -42,7 +42,12 @@ async function initPOS() {
   const res = await api("getProducts");
   hideLoading();
   if (!res.ok) { toast("Error cargando config"); return; }
-  posState.productos = (res.productos || []).map(p => ({ nombre: p.nombre, precio: Number(p.precio) || 0 }));
+  posState.productos = (res.productos || [])
+    .map((p, i) => ({ nombre: p.nombre, precio: Number(p.precio) || 0, vendidos: Number(p.vendidos) || 0, orden: i }))
+    // Más vendidos (últimos 30 días) primero; empates conservan el orden de CONFIG.
+    // Se ordena solo al abrir la caja para que los botones no se muevan mientras se cobra.
+    .sort((a, b) => b.vendidos - a.vendidos || a.orden - b.orden);
+  tkRestaurarTicket();
   renderGrid();
   renderTicket();
   loadPedidosHoy();
@@ -218,15 +223,40 @@ function renderTicket() {
   });
 
   document.getElementById("tk-facturar-btn").disabled = !entries.length || posState.enviando;
+  document.getElementById("tk-limpiar-btn").disabled = !entries.length || posState.enviando;
   document.getElementById("tk-facturar-btn").textContent = posState.editandoId ? "✓ Guardar cambios" : "Facturar";
   document.getElementById("tk-cancelar-edicion-btn").classList.toggle("hidden", !posState.editandoId);
   document.getElementById("tk-calc").classList.toggle("hidden", !entries.length);
   tkCalcVueltas();
+  tkGuardarTicket();
+}
+
+// El ticket en curso se guarda en el teléfono: si Android recarga la app
+// al volver de otra (WhatsApp, Nequi…), no se pierde lo que se iba marcando.
+function tkGuardarTicket() {
+  if (posState.editandoId) return; // una edición no se guarda: al recargar se vuelve al ticket nuevo
+  try { localStorage.setItem("maddre_pos_ticket", JSON.stringify(posState.ticket)); } catch (e) {}
+}
+
+function tkRestaurarTicket() {
+  let guardado = {};
+  try { guardado = JSON.parse(localStorage.getItem("maddre_pos_ticket") || "{}") || {}; } catch (e) {}
+  Object.entries(guardado).forEach(([nombre, q]) => {
+    if (posState.productos.some(p => p.nombre === nombre) && Number(q) > 0) posState.ticket[nombre] = Number(q);
+  });
 }
 
 // En celular el ticket es una barra abajo; tocar la cabecera lo expande/colapsa.
 function tkTogglePanel() {
   document.getElementById("tk-panel").classList.toggle("open");
+}
+
+// Botón "Borrar pedido": descarta el pedido que se está tomando para empezar de nuevo
+// (no toca nada ya facturado).
+function tkBorrarPedido() {
+  if (!Object.keys(posState.ticket).length) return;
+  tkLimpiar();
+  toast("Pedido borrado — empieza de nuevo");
 }
 
 function tkLimpiar() {
@@ -296,8 +326,8 @@ async function tkFacturar() {
 // ── Navegación ────────────────────────────────────────────────
 function posIrAdmin() {
   // El PIN ya validado en esta caja también sirve para entrar al panel admin.
-  sessionStorage.setItem("maddre_pos_pin", state.posPin || "1");
-  sessionStorage.setItem("maddre_pos_nombre", state.adminNombre || "");
+  localStorage.setItem("maddre_pos_pin", state.posPin || "1");
+  localStorage.setItem("maddre_pos_nombre", state.adminNombre || "");
   window.location.href = "admin.html";
 }
 

@@ -3,7 +3,7 @@
 //  Código común a las 3 superficies: index.html (club), admin.html, pos.html
 // ════════════════════════════════════════════════════════════
 
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbylSrBu84KEaLl19Jny5YSt2iTgRdUfdVEfpseT_KMdjkGvA2Z-5y5pC-XqSto-Lz99GQ/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwD-GPUuD7sN219Id_sqFMo3XDuSv2NkXea32yL4LH0e99I2B4NlD0jYTjcqatULd5v/exec";
 
 // ── State ─────────────────────────────────────────────────────
 let state = {
@@ -78,8 +78,8 @@ function pinReset() {
   if (errEl) errEl.classList.add("hidden");
   const destino = document.getElementById("pin-destino");
   if (destino) destino.classList.add("hidden");
-  sessionStorage.removeItem("maddre_pos_pin");
-  sessionStorage.removeItem("maddre_pos_nombre");
+  localStorage.removeItem("maddre_pos_pin");
+  localStorage.removeItem("maddre_pos_nombre");
 }
 
 function pinPress(digit) {
@@ -115,8 +115,8 @@ async function pinSubmit() {
   }
   state.posPin      = pinValue;
   state.adminNombre = res.nombre || "";
-  sessionStorage.setItem("maddre_pos_pin",    pinValue);
-  sessionStorage.setItem("maddre_pos_nombre", res.nombre || "");
+  localStorage.setItem("maddre_pos_pin",    pinValue);
+  localStorage.setItem("maddre_pos_nombre", res.nombre || "");
   // En la caja se entra directo; en el panel admin se elige destino
   if (window.location.pathname.endsWith("pos.html")) { pinIrA("pos"); return; }
   // Mostrar botones de destino

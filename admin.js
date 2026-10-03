@@ -6,50 +6,13 @@
 
 const POS_PIN_CLIENT = "__pin__"; // marcador interno: "ya hay un PIN de staff válido"
 
-// ── Plantillas de correo (HTML) ───────────────────────────────
-// Cada plantilla es una página HTML en /emails/ con un <div id="email-contenido">
-// adentro — eso es lo único que se carga en el mensaje masivo (el logo y pie de
-// página del correo real los agrega el backend aparte). Para agregar una plantilla
-// nueva: crear el archivo en /emails/ y sumarlo a esta lista.
-const PLANTILLAS_CORREO = [
-  { nombre: "🌀 Promo 2x1 Frutos Rojos", archivo: "emails/2x1-frutos-rojos.html" },
-  { nombre: "📱 Escanea y entra al club (QR)", archivo: "emails/2-qr-app.html" },
-];
-
-function initPlantillasCorreo() {
-  const sel = document.getElementById("masivo-plantilla");
-  if (!sel) return;
-  sel.innerHTML = '<option value="">— sin plantilla, escribo el mensaje —</option>' +
-    PLANTILLAS_CORREO.map(p => `<option value="${p.archivo}">${p.nombre}</option>`).join("");
-}
-
-async function cargarPlantillaCorreo() {
-  const sel = document.getElementById("masivo-plantilla");
-  const archivo = sel.value;
-  if (!archivo) return;
-  showLoading();
-  try {
-    // Sin cache: bust con timestamp para no servir una version vieja del template
-    const res = await fetch(archivo + "?t=" + Date.now(), { cache: "no-store" });
-    const html = await res.text();
-    const doc = new DOMParser().parseFromString(html, "text/html");
-    const contenido = doc.querySelector("#email-contenido");
-    document.getElementById("masivo-mensaje").value = (contenido ? contenido.innerHTML : html).trim();
-    updateEmailPreview();
-  } catch (e) {
-    toast("❌ No se pudo cargar la plantilla");
-  }
-  hideLoading();
-}
-
 // ── Entrada al panel ────────────────────────────────────────
 window.addEventListener("load", () => {
-  initPlantillasCorreo();
-  const savedPin = sessionStorage.getItem("maddre_pos_pin");
+  const savedPin = localStorage.getItem("maddre_pos_pin");
   if (savedPin) {
     // Ya se validó un PIN de staff en esta sesión (acá o en pos.html) — entra directo.
     state.posPin      = savedPin;
-    state.adminNombre = sessionStorage.getItem("maddre_pos_nombre") || "";
+    state.adminNombre = localStorage.getItem("maddre_pos_nombre") || "";
     showScreen("admin");
     mostrarSaludoAdmin();
     loadAdminSummary();
@@ -157,7 +120,6 @@ async function loadAdminSummary() {
   document.getElementById("adm-libros").textContent          = res.librosDisponibles  || 0;
   document.getElementById("adm-cajas-semana").textContent    = res.cajasEsemana      ?? "—";
   document.getElementById("adm-rollitos-semana").textContent = res.rollitosEsemana   ?? "—";
-  document.getElementById("adm-recipients-pill").textContent = `👥 ${res.vecinos || 0} vecinos recibirán este mensaje`;
 
   // Márgenes netos
   setMargenCard("adm-margen-historico", "adm-margen-hist-sub",
@@ -350,38 +312,6 @@ async function loadAdminClientDetail(correo) {
   document.getElementById("admin-client-detail").scrollIntoView({ behavior: "smooth" });
 }
 
-// ── ENVÍO MASIVO ──────────────────────────────────────────────
-function updateEmailPreview() {
-  const msg = document.getElementById("masivo-mensaje").value;
-  const previewEl = document.getElementById("email-preview-body");
-  if (!msg) {
-    previewEl.textContent = "Tu mensaje aparecerá aquí...";
-    return;
-  }
-  // Si parece HTML (tiene una etiqueta), se renderiza tal cual para previsualizar
-  // cómo va a quedar de verdad — si no, se muestra como texto plano.
-  if (/<[a-z][\s\S]*>/i.test(msg)) {
-    previewEl.innerHTML = msg;
-  } else {
-    previewEl.textContent = msg;
-  }
-}
-
-async function enviarMasivo() {
-  const asunto  = document.getElementById("masivo-asunto").value.trim();
-  const mensaje = document.getElementById("masivo-mensaje").value.trim();
-  if (!asunto || !mensaje) { toast("Completa asunto y mensaje"); return; }
-  if (!confirm(`¿Enviar este correo a todos los vecinos?`)) return;
-  showLoading();
-  const res = await api("enviarMasivo", { asunto, mensaje, pin: state.posPin || "", adminPassword: state.adminPass || "" });
-  hideLoading();
-  if (!res.ok) { toast("❌ " + res.error); return; }
-  toast(`✅ Correo enviado a ${res.enviados} vecinos`);
-  document.getElementById("masivo-asunto").value = "";
-  document.getElementById("masivo-mensaje").value = "";
-  document.getElementById("email-preview-body").textContent = "Tu mensaje aparecerá aquí...";
-}
-
 async function createFlash() {
   const texto        = document.getElementById("flash-texto").value.trim();
   const nivel_minimo = document.getElementById("flash-nivel").value;
@@ -494,8 +424,8 @@ async function adminConfirmarAsignacion(id, correo) {
 
 function adminIrACaja() {
   if (state.posPin) {
-    sessionStorage.setItem("maddre_pos_pin",    state.posPin);
-    sessionStorage.setItem("maddre_pos_nombre", state.adminNombre || "");
+    localStorage.setItem("maddre_pos_pin",    state.posPin);
+    localStorage.setItem("maddre_pos_nombre", state.adminNombre || "");
   } else if (state.adminPass) {
     sessionStorage.setItem("maddre_pos_bypass", state.adminPass);
   }

@@ -92,7 +92,7 @@
     <button class="admin-tab" onclick="adminTab(this,'clientes')">🔍 Clientes</button>
     <button class="admin-tab" onclick="adminTab(this,'pedidos')">📋 Pedidos</button>
     <button class="admin-tab" onclick="adminTab(this,'promos')">🎁 Promos</button>
-    <button class="admin-tab" onclick="adminTab(this,'masivo')">📨 Correos</button>
+    <button class="admin-tab" onclick="window.location.href='correos.html'">📨 Correos</button>
   </div>
 
   <!-- ── TAB RESUMEN ── -->
@@ -296,43 +296,6 @@
     </div>
   </div>
 
-  <!-- ── TAB MASIVO ── -->
-  <div id="admin-tab-masivo" class="admin-section hidden">
-    <div class="card" style="margin:1rem">
-      <p class="card-title">📨 Mensaje a todos los vecinos</p>
-      <div id="adm-recipients-pill" class="recipients-pill">👥 — vecinos recibirán este mensaje</div>
-
-      <div class="field" style="margin-top:1rem">
-        <label>Plantilla <span class="hint">(opcional — carga un HTML ya armado)</span></label>
-        <select id="masivo-plantilla" onchange="cargarPlantillaCorreo()">
-          <option value="">— sin plantilla, escribo el mensaje —</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label>Asunto</label>
-        <input id="masivo-asunto" type="text" placeholder="Ej: ¡Hoy tenemos pistacho! 🦋">
-      </div>
-      <div class="field">
-        <label>Mensaje <span class="hint">(texto normal, o pega HTML directo si quieres algo con formato/imágenes)</span></label>
-        <textarea id="masivo-mensaje" placeholder="Escribe tu mensaje aquí, o pega HTML..." rows="7" style="width:100%;padding:.75rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:.95rem;background:var(--crema);resize:vertical;outline:none" oninput="updateEmailPreview()"></textarea>
-      </div>
-      <p class="mini-title" style="margin-bottom:.5rem">Vista previa</p>
-      <div class="preview-email">
-        <div class="email-header-preview">
-          <div class="eh-logo">🦋</div>
-          <div class="eh-name">maddre</div>
-          <div class="eh-sub">Un mensaje para ti, vecino 🦋</div>
-        </div>
-        <div id="email-preview-body" class="email-body-preview">Tu mensaje aparecerá aquí...</div>
-        <div class="email-footer-preview">
-          Café Maddre · Miércoles a Domingo · 3 pm – 7 pm<br>Hecho con amor 🦋
-        </div>
-      </div>
-      <button class="btn-primary" onclick="enviarMasivo()" style="margin-top:1rem">📨 Enviar a todos los vecinos</button>
-    </div>
-  </div>
-
 </div>
 
 <!-- ── LOADING OVERLAY ─────────────────────────────────────── -->
@@ -343,7 +306,7 @@
 <!-- ── TOAST ───────────────────────────────────────────────── -->
 <div id="toast" class="toast hidden"></div>
 
-<script src="shared.js?v=1"></script>
-<script src="admin.js?v=2"></script>
+<script src="shared.js?v=4"></script>
+<script src="admin.js?v=3"></script>
 </body>
 </html>

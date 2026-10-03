@@ -17,7 +17,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=3">
+<link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
 
@@ -117,7 +117,7 @@
         </div>
 
         <div class="tk-actions">
-          <button id="tk-limpiar-btn" class="btn-ghost" onclick="tkLimpiar()">Limpiar</button>
+          <button id="tk-limpiar-btn" class="btn-ghost" onclick="tkBorrarPedido()" disabled>✕ Borrar pedido</button>
           <button id="tk-facturar-btn" class="btn-primary" onclick="tkFacturar()" disabled>Facturar</button>
         </div>
         <button id="tk-cancelar-edicion-btn" class="btn-link hidden" onclick="tkCancelarEdicion()">cancelar edición</button>
@@ -134,7 +134,7 @@
 <!-- ── TOAST ───────────────────────────────────────────────── -->
 <div id="toast" class="toast hidden"></div>
 
-<script src="shared.js?v=2"></script>
-<script src="pos.js?v=6"></script>
+<script src="shared.js?v=4"></script>
+<script src="pos.js?v=8"></script>
 </body>
 </html>
