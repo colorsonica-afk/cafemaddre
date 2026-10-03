@@ -62,8 +62,9 @@ const TK_EMOJIS = [
 ];
 
 function tkEmoji(nombre) {
-  const n = nombre.toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g, "") + " ";
-  const hit = TK_EMOJIS.find(([clave]) => n.includes(clave));
+  // La clave tiene que estar al inicio de una palabra: "PAN" no debe agarrar "EMPANADA".
+  const n = " " + nombre.toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g, "") + " ";
+  const hit = TK_EMOJIS.find(([clave]) => n.includes(" " + clave));
   return hit ? hit[1] : "🦋";
 }
 
