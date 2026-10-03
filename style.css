@@ -1959,3 +1959,222 @@ html, body {
   outline: none;
 }
 .search-icon-adm { font-size: 1rem; color: var(--text-lt); }
+
+/* ══ CAJA POR TICKETS (oct 2026) ════════════════════════════
+   Cuadrícula de productos + ticket. En celular el ticket es una
+   barra fija abajo (se expande tocando la cabecera); en tablet/PC
+   va como columna a la derecha. */
+.tk-layout { padding-bottom: 9.5rem; }
+.tk-grid-wrap { min-width: 0; }
+
+.tk-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: .6rem;
+  padding: 1rem;
+}
+.tk-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .2rem;
+  min-height: 104px;
+  padding: .6rem .35rem;
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+  font-family: inherit;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition: transform .08s ease, border-color .15s ease, background .15s ease;
+}
+.tk-tile:active { transform: scale(.94); background: var(--cafe-pale); }
+.tk-tile.on { border-color: var(--cafe); background: var(--cafe-pale); }
+.tk-tile-emoji { font-size: 2rem; line-height: 1; }
+.tk-tile-name {
+  font-size: .72rem;
+  font-weight: 500;
+  color: var(--text);
+  text-align: center;
+  line-height: 1.15;
+  word-break: break-word;
+}
+.tk-tile-price { font-size: .7rem; color: var(--text-lt); }
+.tk-tile-badge {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 .4rem;
+  border-radius: 13px;
+  background: var(--cafe);
+  color: var(--white);
+  font-size: .85rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-sm);
+}
+.tk-tile-badge.hidden { display: none; }
+
+.tk-panel {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  background: var(--white);
+  border-top: 1px solid var(--border);
+  border-radius: var(--radius) var(--radius) 0 0;
+  box-shadow: 0 -6px 30px rgba(74,46,26,0.16);
+  padding: .5rem 1rem calc(.85rem + env(safe-area-inset-bottom));
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+.tk-head {
+  display: flex;
+  align-items: baseline;
+  gap: .6rem;
+  padding: .55rem 0 .6rem;
+  cursor: pointer;
+}
+.tk-head::before {
+  content: "";
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  width: 40px;
+  height: 4px;
+  margin-left: -20px;
+  border-radius: 2px;
+  background: var(--crema3);
+}
+.tk-num {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  color: var(--cafe);
+  font-size: 1.05rem;
+  letter-spacing: .5px;
+}
+.tk-count { font-size: .8rem; color: var(--text-lt); }
+.tk-total {
+  margin-left: auto;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem;
+  color: var(--cafe);
+}
+.tk-body { display: flex; flex-direction: column; min-height: 0; }
+.tk-items { overflow-y: auto; min-height: 0; flex: 1; }
+.tk-empty { font-size: .85rem; color: var(--text-lt); padding: .5rem 0 .75rem; text-align: center; }
+.tk-item {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  padding: .45rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.tk-item-btn {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1.5px solid var(--cafe-lt);
+  background: var(--white);
+  color: var(--cafe);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.tk-item-btn:active { background: var(--cafe-pale); }
+.tk-item-qty { font-weight: 600; color: var(--cafe); min-width: 1.4rem; text-align: center; }
+.tk-item-name { flex: 1; min-width: 0; font-size: .88rem; color: var(--text); }
+.tk-item-sub { font-size: .85rem; color: var(--text-md); }
+
+.tk-calc {
+  margin-top: .6rem;
+  padding: .7rem .8rem;
+  background: var(--crema);
+  border-radius: var(--radius-sm);
+}
+.tk-calc.hidden { display: none; }
+.tk-calc-row { display: flex; align-items: center; gap: .6rem; }
+.tk-calc-row label { font-size: .8rem; color: var(--text-md); white-space: nowrap; }
+.tk-calc-row input {
+  flex: 1;
+  min-width: 0;
+  padding: .5rem .7rem;
+  font-size: 1.05rem;
+  font-family: inherit;
+  text-align: right;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-xs);
+  background: var(--white);
+  color: var(--text);
+}
+.tk-calc-row input:focus { outline: none; border-color: var(--cafe-lt); }
+.tk-calc-quick { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .5rem; }
+.tk-calc-quick button {
+  flex: 1;
+  padding: .4rem .3rem;
+  font-size: .75rem;
+  font-family: inherit;
+  border: 1px solid var(--crema3);
+  border-radius: var(--radius-xs);
+  background: var(--white);
+  color: var(--cafe-md);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.tk-calc-quick button:active { background: var(--cafe-pale); }
+.tk-vueltas { margin-top: .5rem; font-size: 1.05rem; font-weight: 600; text-align: right; }
+.tk-vueltas:empty { display: none; }
+.tk-vueltas.ok { color: var(--verde); }
+.tk-vueltas.falta { color: var(--flash); }
+
+.tk-actions { display: flex; gap: .6rem; margin-top: .7rem; }
+.tk-actions .btn-ghost { flex: 1; margin: 0; }
+.tk-actions .btn-primary { flex: 2; margin: 0; }
+.tk-actions .btn-primary:disabled { opacity: .45; cursor: default; box-shadow: none; }
+#tk-cancelar-edicion-btn { margin-top: .5rem; align-self: center; }
+
+/* Celular: barra colapsada muestra solo cabecera + botones */
+@media (max-width: 819px) {
+  .tk-panel:not(.open) .tk-items,
+  .tk-panel:not(.open) .tk-calc { display: none; }
+}
+
+/* Tablet / PC: dos columnas, ticket siempre abierto a la derecha */
+@media (min-width: 820px) {
+  .tk-layout {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    align-items: start;
+    padding-bottom: 0;
+  }
+  .tk-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: .8rem; }
+  .tk-tile { min-height: 124px; }
+  .tk-tile-emoji { font-size: 2.4rem; }
+  .tk-tile-name { font-size: .8rem; }
+  .tk-panel {
+    position: sticky;
+    top: 70px;
+    margin: 1rem 1rem 1rem 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    max-height: calc(100vh - 90px);
+    padding: .5rem 1.1rem 1rem;
+  }
+  .tk-head { cursor: default; }
+  .tk-head::before { display: none; }
+}

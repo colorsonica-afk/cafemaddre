@@ -17,7 +17,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
 
@@ -71,125 +71,58 @@
     <h2>🦋 Caja</h2>
     <button class="tab-switch-btn" onclick="posIrAdmin()">⚙️ Admin</button>
   </div>
-  <div class="scroll-wrap">
 
-    <!-- PASO 1: Sector -->
-    <div id="pos-step-sector" class="pos-step">
-      <p class="pos-step-title">¿Dónde?</p>
-      <div id="pos-sector-list" class="pos-chips"></div>
+  <div class="tk-layout">
+    <!-- Cuadrícula de productos: cada toque suma 1 -->
+    <div class="tk-grid-wrap">
+      <div id="tk-grid" class="tk-grid"></div>
+
+      <!-- Pedidos de hoy -->
+      <div class="card pos-pedidos-panel">
+        <div class="pos-pedidos-hoy-header">
+          <p class="pos-agregar-title" style="margin:0">📋 Tickets de hoy</p>
+          <button class="btn-link pos-pedidos-refresh" onclick="loadPedidosHoy()">↻ actualizar</button>
+        </div>
+        <p id="pos-pedidos-hoy-resumen" class="pos-pedidos-hoy-resumen"></p>
+        <div id="pos-pedidos-hoy-list" class="pos-pedidos-list">
+          <p style="color:var(--text-lt);font-size:.82rem">Cargando…</p>
+        </div>
+      </div>
     </div>
 
-    <!-- PASO 2: Pedido -->
-    <div id="pos-step-pedido" class="pos-step hidden">
-      <div class="pos-pedido-header">
-        <p class="pos-step-title">Pedido <span id="pos-sector-label" class="pos-sector-tag"></span></p>
-        <button class="btn-link" onclick="posVolverSector()">cambiar sector</button>
+    <!-- Ticket actual -->
+    <div id="tk-panel" class="tk-panel">
+      <div class="tk-head" onclick="tkTogglePanel()">
+        <span id="tk-num" class="tk-num">TICKET --</span>
+        <span id="tk-count" class="tk-count"></span>
+        <strong id="tk-total" class="tk-total">$0</strong>
       </div>
+      <div class="tk-body">
+        <div id="tk-items" class="tk-items"></div>
 
-      <!-- Lista de items agregados -->
-      <div id="pos-items-list" class="pos-items-list"></div>
-
-      <!-- Grabar pedido por voz -->
-      <div class="card pos-mic-card">
-        <p class="pos-agregar-title">🎤 Grabar pedido</p>
-        <button id="pos-mic-btn" class="btn-ghost" onclick="posToggleGrabacion()">🎤 Grabar</button>
-        <p id="pos-mic-status" class="hint" style="margin-top:.5rem"></p>
-      </div>
-
-      <!-- Agregar producto -->
-      <div class="card pos-agregar-card">
-        <p class="pos-agregar-title">+ Agregar producto</p>
-        <div class="field">
-          <label>Producto</label>
-          <select id="pos-sel-producto" onchange="posProductoChange()">
-            <option value="">— selecciona —</option>
-          </select>
-        </div>
-        <div id="pos-variedad-wrap" class="field hidden">
-          <label>Variedad <span class="hint">(elige una o varias)</span></label>
-          <div id="pos-variedad-chips" class="pos-var-chips"></div>
-        </div>
-        <div class="field">
-          <label>Cantidad</label>
-          <div class="qty-ctrl">
-            <button class="qty-btn" onclick="posQtyChange(-1)">−</button>
-            <span id="pos-qty-val" class="qty-num">1</span>
-            <button class="qty-btn" onclick="posQtyChange(1)">+</button>
+        <!-- Calculadora de vueltas -->
+        <div id="tk-calc" class="tk-calc hidden">
+          <div class="tk-calc-row">
+            <label for="tk-paga">Paga con</label>
+            <input id="tk-paga" type="text" inputmode="numeric" placeholder="$0" oninput="tkCalcVueltas()">
           </div>
+          <div class="tk-calc-quick">
+            <button onclick="tkPagaCon('exacto')">Exacto</button>
+            <button onclick="tkPagaCon(10000)">10 mil</button>
+            <button onclick="tkPagaCon(20000)">20 mil</button>
+            <button onclick="tkPagaCon(50000)">50 mil</button>
+            <button onclick="tkPagaCon(100000)">100 mil</button>
+          </div>
+          <p id="tk-vueltas" class="tk-vueltas"></p>
         </div>
-        <button class="btn-ghost" onclick="posAgregarItem()">Agregar al pedido</button>
-      </div>
 
-      <!-- Total -->
-      <div id="pos-total-wrap" class="card pos-total-card hidden">
-        <div class="pos-total-row">
-          <span>Total</span>
-          <strong id="pos-total-val">$0</strong>
+        <div class="tk-actions">
+          <button id="tk-limpiar-btn" class="btn-ghost" onclick="tkLimpiar()">Limpiar</button>
+          <button id="tk-facturar-btn" class="btn-primary" onclick="tkFacturar()" disabled>Facturar</button>
         </div>
-        <button id="pos-continuar-btn" class="btn-primary" onclick="posSiguienteCliente()">Continuar →</button>
-        <button id="pos-guardar-edicion-btn" class="btn-primary hidden" onclick="posGuardarEdicion()" style="margin-top:.5rem;background:var(--verde)">✓ Guardar cambios</button>
-        <button id="pos-cancelar-edicion-btn" class="btn-ghost hidden" onclick="posCancelarEdicion()" style="margin-top:.4rem">Cancelar edición</button>
+        <button id="tk-cancelar-edicion-btn" class="btn-link hidden" onclick="tkCancelarEdicion()">cancelar edición</button>
       </div>
     </div>
-
-    <!-- PASO 3: Cliente (opcional) -->
-    <div id="pos-step-cliente" class="pos-step hidden">
-      <p class="pos-step-title">¿Cliente del club?</p>
-      <div class="card">
-        <div class="field">
-          <label>Nombre o correo <span class="hint">(opcional)</span></label>
-          <input id="pos-search-cliente" type="text" placeholder="Ana o ana@correo.com" oninput="posBuscarCliente()">
-        </div>
-        <div id="pos-search-results" class="search-results"></div>
-        <div id="pos-cliente-seleccionado" class="pos-cliente-sel hidden">
-          <p id="pos-cliente-sel-nombre" class="pos-name"></p>
-          <p id="pos-cliente-sel-correo" class="prof-sub"></p>
-          <button class="btn-primary" onclick="posConfirmarConCliente()">✔ Confirmar con este cliente</button>
-        </div>
-        <div id="pos-crear-cliente-wrap" class="hidden" style="margin-top:.75rem">
-          <p id="pos-crear-msg" style="font-size:.8rem;color:var(--text-lt);margin-bottom:.5rem"></p>
-          <button class="btn-ghost" onclick="posCrearCliente()" style="width:100%;color:var(--verde)">+ Agregar al club y facturar</button>
-        </div>
-        <button class="btn-ghost" onclick="posConfirmarSinCliente()" style="margin-top:.75rem">Facturar sin cliente</button>
-      </div>
-    </div>
-
-    <!-- PEDIDOS DE HOY: siempre visible -->
-    <div class="card pos-pedidos-panel">
-      <div class="pos-pedidos-hoy-header">
-        <p class="pos-agregar-title" style="margin:0">📋 Pedidos de hoy</p>
-        <button class="btn-link pos-pedidos-refresh" onclick="loadPedidosHoy()">↻ actualizar</button>
-      </div>
-      <p id="pos-pedidos-hoy-resumen" class="pos-pedidos-hoy-resumen"></p>
-      <div id="pos-pedidos-hoy-list" class="pos-pedidos-list">
-        <p style="color:var(--text-lt);font-size:.82rem">Cargando…</p>
-      </div>
-    </div>
-
-    <!-- CONFIRMACIÓN + RESUMEN DÍA -->
-    <div id="pos-step-ok" class="pos-step hidden">
-      <div class="card pos-ok-card">
-        <p class="pos-ok-emoji">🦋</p>
-        <p class="pos-ok-title">¡Venta registrada!</p>
-        <p id="pos-ok-resumen" class="pos-ok-sub"></p>
-      </div>
-      <div class="card pos-resumen-dia">
-        <h3>Ventas de hoy</h3>
-        <div class="summary-grid">
-          <div><p id="dia-ventas" class="sum-num">-</p><p>ventas</p></div>
-          <div><p id="dia-total" class="sum-num">-</p><p>total</p></div>
-          <div><p id="dia-pts" class="sum-num">-</p><p>puntos</p></div>
-        </div>
-        <div style="margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--border)">
-          <p style="font-size:.75rem;color:var(--text-lt);text-transform:uppercase;letter-spacing:.5px">Más vendido hoy</p>
-          <p id="dia-top" style="font-family:'Playfair Display',serif;color:var(--cafe);font-size:1.1rem;margin-top:.2rem">-</p>
-        </div>
-      </div>
-      <div style="padding:0 1rem 1.25rem">
-        <button class="btn-primary" onclick="posReset()">Nueva venta</button>
-      </div>
-    </div>
-
   </div>
 </div>
 
@@ -202,6 +135,6 @@
 <div id="toast" class="toast hidden"></div>
 
 <script src="shared.js?v=1"></script>
-<script src="pos.js?v=1"></script>
+<script src="pos.js?v=2"></script>
 </body>
 </html>
