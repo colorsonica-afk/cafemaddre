@@ -61,6 +61,32 @@ const TK_EMOJIS = [
   ["JUGO", "🧃"], ["AGUA", "💧"], ["TE ", "🍵"], ["CAFE", "☕"],
 ];
 
+// Productos que no tienen emoji propio: ícono dibujado a mano (SVG).
+const TK_ICONOS = {
+  ROLLITO: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="tkRollMasa" cx="38%" cy="32%" r="75%">
+        <stop offset="0" stop-color="#F6C98A"/><stop offset=".6" stop-color="#E3A35E"/><stop offset="1" stop-color="#B9733A"/>
+      </radialGradient>
+    </defs>
+    <ellipse cx="32" cy="58.5" rx="21" ry="3.5" fill="#000" opacity=".13"/>
+    <circle cx="32" cy="31" r="26" fill="url(#tkRollMasa)" stroke="#9C5A26" stroke-width="2"/>
+    <path d="M32 31 a3 3 0 0 1 6 0 a6 6 0 0 1 -12 0 a9 9 0 0 1 18 0 a12 12 0 0 1 -24 0 a15 15 0 0 1 30 0 a18 18 0 0 1 -36 0 a21 21 0 0 1 42 0"
+      fill="none" stroke="#7E3F15" stroke-width="3.4" stroke-linecap="round" opacity=".9"/>
+    <path d="M13 22 q3 -7 10 -5 q5 2 9 -1 q6 -3 11 0 q5 2 8 6 q1 3 -2 3 q-2 0 -2 4 q0 3 -2 3 q-2 0 -2 -3 q0 -3 -3 -2 q-4 1 -7 -1 q-3 -1 -5 2 q-1 5 -3 5 q-2 0 -2 -4 q0 -3 -3 -2 q-4 1 -5 -2 z"
+      fill="#FFF8EE" stroke="#EADBC6" stroke-width=".8"/>
+    <ellipse cx="22" cy="20" rx="4" ry="1.4" fill="#fff" opacity=".9"/>
+    <circle cx="44" cy="44" r="1" fill="#7E3F15"/><circle cx="20" cy="42" r=".9" fill="#7E3F15"/><circle cx="34" cy="49" r=".9" fill="#7E3F15"/>
+  </svg>`,
+};
+
+// Devuelve HTML (emoji o ícono propio) para mostrar junto al producto.
+function tkIcono(nombre) {
+  const n = " " + nombre.toUpperCase() + " ";
+  const clave = Object.keys(TK_ICONOS).find(k => n.includes(" " + k));
+  return clave ? `<span class="tk-ico">${TK_ICONOS[clave]}</span>` : tkEmoji(nombre);
+}
+
 function tkEmoji(nombre) {
   // La clave tiene que estar al inicio de una palabra: "PAN" no debe agarrar "EMPANADA".
   const n = " " + nombre.toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g, "") + " ";
@@ -81,7 +107,7 @@ function renderGrid() {
     btn.className = "tk-tile";
     btn.dataset.nombre = p.nombre;
     btn.innerHTML = `
-      <span class="tk-tile-emoji">${tkEmoji(p.nombre)}</span>
+      <span class="tk-tile-emoji">${tkIcono(p.nombre)}</span>
       <span class="tk-tile-name"></span>
       <span class="tk-tile-price">${fmt(p.precio)}</span>
       <span class="tk-tile-badge hidden"></span>`;
@@ -128,9 +154,9 @@ function renderTicket() {
       row.innerHTML = `
         <button class="tk-item-btn" aria-label="Quitar uno">−</button>
         <span class="tk-item-qty">${qty}</span>
-        <span class="tk-item-name"></span>
+        <span class="tk-item-name"><span class="tk-item-ico">${tkIcono(nombre)}</span> <span></span></span>
         <span class="tk-item-sub">${fmt(tkPrecio(nombre) * qty)}</span>`;
-      row.querySelector(".tk-item-name").textContent = `${tkEmoji(nombre)} ${nombre}`;
+      row.querySelector(".tk-item-name > span:last-child").textContent = nombre;
       row.querySelector(".tk-item-btn").onclick = () => tkSumar(nombre, -1);
       itemsEl.appendChild(row);
     });

@@ -2178,3 +2178,5 @@ html, body {
   .tk-head { cursor: default; }
   .tk-head::before { display: none; }
 }
+.tk-ico { display: inline-block; width: 1em; height: 1em; vertical-align: -0.12em; }
+.tk-ico svg { width: 100%; height: 100%; display: block; }
