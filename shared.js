@@ -117,6 +117,8 @@ async function pinSubmit() {
   state.adminNombre = res.nombre || "";
   sessionStorage.setItem("maddre_pos_pin",    pinValue);
   sessionStorage.setItem("maddre_pos_nombre", res.nombre || "");
+  // En la caja se entra directo; en el panel admin se elige destino
+  if (window.location.pathname.endsWith("pos.html")) { pinIrA("pos"); return; }
   // Mostrar botones de destino
   document.getElementById("pin-destino").classList.remove("hidden");
 }
