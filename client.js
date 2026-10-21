@@ -430,13 +430,13 @@ function renderPromos(promos, cliente) {
   if (cumpleCard) cumpleCard.style.display = promos.cumpleActivo === false ? "none" : "";
   if (cumpleDesc) {
     if (promos.cumpleDisponible) {
-      cumpleDesc.textContent = promos.cumpleDesc || "🎂 ¡Rollito gratis hoy!";
+      cumpleDesc.textContent = promos.cumpleDesc || "🎂 ¡Hoy te regalamos capuchino + rollito o waffle! Muestra tu cédula";
     } else if (promos.esMesCumple) {
       cumpleDesc.textContent = "Solo disponible el día exacto de tu cumpleaños";
     } else if (promos.mesesParaCumple > 0) {
       cumpleDesc.textContent = `Tu cumpleaños llega en ${promos.mesesParaCumple} mes(es)`;
     } else {
-      cumpleDesc.textContent = promos.cumpleDesc || "Solo el día de tu cumpleaños";
+      cumpleDesc.textContent = promos.cumpleDesc || "Capuchino + rollito o waffle el día de tu cumpleaños, con tu cédula";
     }
   }
   if (btnCumple) btnCumple.disabled = !promos.cumpleDisponible;
@@ -807,12 +807,12 @@ async function redeemCaja() {
 }
 
 async function redeemCumple() {
-  if (!requireAuth("canjear tu rollito cumpleañero")) return;
+  if (!requireAuth("canjear tu combo cumpleañero")) return;
   showLoading();
   const res = await api("redeemCumple", { correo: state.correo });
   hideLoading();
   if (!res.ok) { toast("❌ " + res.error); return; }
-  toast("🎂 ¡Rollito cumpleañero canjeado! Feliz cumpleaños 🎉");
+  toast("🎂 ¡Combo cumpleañero canjeado! Muestra tu cédula en caja. Feliz cumpleaños 🎉");
   loadProfile();
 }
 
