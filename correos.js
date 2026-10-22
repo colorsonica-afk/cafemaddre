@@ -40,6 +40,7 @@ function volverAlPanel() {
 const PLANTILLAS_CORREO = [
   { nombre: "🌀 Promo 2x1 Frutos Rojos", archivo: "emails/2x1-frutos-rojos.html" },
   { nombre: "📱 Escanea y entra al club (QR)", archivo: "emails/2-qr-app.html" },
+  { nombre: "🧇 Invitación a probar los waffles", archivo: "emails/3-waffles.html" },
 ];
 
 function initPlantillasCorreo() {
