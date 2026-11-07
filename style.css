@@ -1442,6 +1442,15 @@ html, body {
   margin: -.2rem 0 .7rem;
 }
 .pos-pedidos-list { display: flex; flex-direction: column; }
+.pos-top-row { align-items: center; gap: .6rem; }
+.pos-top-pos {
+  width: 1.4rem; height: 1.4rem; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 50%; background: var(--crema2);
+  font-size: .72rem; font-weight: 600; color: var(--cafe);
+}
+.pos-top-cant { font-size: .78rem; color: var(--text-lt); white-space: nowrap; }
+.pos-top-total { min-width: 4.5rem; text-align: right; white-space: nowrap; }
 .pos-pedido-edit-btn {
   font-size: .68rem;
   color: var(--cafe);
