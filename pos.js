@@ -356,6 +356,47 @@ async function loadPedidosHoy() {
   renderTicket();
   renderPedidosHoyList(sumRes.ultimas || []);
   renderTopProductos(sumRes.ultimas || [], sumRes.ventasHoy || 0);
+  loadHistoricoProductos();
+}
+
+// ── Histórico por producto (últimos 30 días) ──────────────────
+// Usa "vendidos" de getProducts (unidades de los últimos 30 días). Se vuelve
+// a pedir en cada actualización sin tocar el orden de los botones de la caja.
+// $ = unidades × precio actual del CONFIG (aproximado).
+async function loadHistoricoProductos() {
+  const el = document.getElementById("pos-historico-productos");
+  if (!el) return;
+  const res = await api("getProducts").catch(() => ({ ok: false }));
+  if (!res.ok) {
+    if (!el.children.length || el.textContent.includes("Cargando")) {
+      el.innerHTML = "<p style='color:var(--text-lt);font-size:.82rem'>Sin conexión</p>";
+    }
+    return;
+  }
+  const lista = (res.productos || [])
+    .map(p => ({ nombre: p.nombre, cant: Number(p.vendidos) || 0, total: (Number(p.vendidos) || 0) * (Number(p.precio) || 0) }))
+    .filter(p => p.cant > 0)
+    .sort((a, b) => b.cant - a.cant || b.total - a.total);
+  renderListaProductos(el, lista, "Sin ventas en los últimos 30 días");
+}
+
+function renderListaProductos(el, lista, vacio) {
+  if (!lista.length) {
+    el.innerHTML = `<p style='color:var(--text-lt);font-size:.82rem'>${vacio}</p>`;
+    return;
+  }
+  el.innerHTML = "";
+  lista.forEach((item, i) => {
+    const row = document.createElement("div");
+    row.className = "dia-pedido-row pos-top-row";
+    row.innerHTML = `
+      <span class="pos-top-pos">${i + 1}</span>
+      <p class="dia-pedido-prod" style="flex:1;min-width:0"></p>
+      <span class="pos-top-cant">${item.cant} und</span>
+      <span class="dia-pedido-total pos-top-total">${fmt(item.total)}</span>`;
+    row.querySelector(".dia-pedido-prod").textContent = item.nombre;
+    el.appendChild(row);
+  });
 }
 
 // ── Lo más vendido hoy ────────────────────────────────────────
@@ -391,22 +432,8 @@ function renderTopProductos(ventas, ventasHoy) {
   const el = document.getElementById("pos-top-productos");
   if (!el) return;
   const top = calcularTopProductos(ventas);
-  if (!top.length) {
-    el.innerHTML = "<p style='color:var(--text-lt);font-size:.82rem'>Sin ventas aún hoy</p>";
-    return;
-  }
-  el.innerHTML = "";
-  top.forEach((item, i) => {
-    const row = document.createElement("div");
-    row.className = "dia-pedido-row pos-top-row";
-    row.innerHTML = `
-      <span class="pos-top-pos">${i + 1}</span>
-      <p class="dia-pedido-prod" style="flex:1;min-width:0"></p>
-      <span class="pos-top-cant">${item.cant} und</span>
-      <span class="dia-pedido-total pos-top-total">${fmt(item.total)}</span>`;
-    row.querySelector(".dia-pedido-prod").textContent = item.nombre;
-    el.appendChild(row);
-  });
+  renderListaProductos(el, top, "Sin ventas aún hoy");
+  if (!top.length) return;
   if (ventas.length < ventasHoy) {
     const nota = document.createElement("p");
     nota.style.cssText = "color:var(--text-lt);font-size:.72rem;margin-top:.4rem";
