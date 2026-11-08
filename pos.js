@@ -355,6 +355,64 @@ async function loadPedidosHoy() {
   posState.numTicket = Math.max(posState.numTicket, (sumRes.ventasHoy || 0) + 1, maxVisto + 1);
   renderTicket();
   renderPedidosHoyList(sumRes.ultimas || []);
+  renderTopProductos(sumRes.ultimas || [], sumRes.ventasHoy || 0);
+}
+
+// ── Lo más vendido hoy ────────────────────────────────────────
+// Suma por línea de cada ticket (no por número de ticket, que puede repetirse).
+// "$" = cantidad × precio actual del CONFIG; si el ticket tiene un solo producto
+// se usa el total cobrado en ese ticket.
+function calcularTopProductos(ventas) {
+  const mapa = {};
+  ventas.forEach(v => {
+    const lineas = [];
+    String(v.productos || "").split(",").map(s => s.trim()).filter(Boolean).forEach(part => {
+      const match = part.match(/^(.+?)\s+x(\d+)$/i);
+      const base = (match ? match[1] : part).replace(/\s*\([^)]*\)\s*$/, "").trim();
+      const prod = posState.productos.find(p => p.nombre.toUpperCase() === base.toUpperCase());
+      lineas.push({
+        nombre: prod ? prod.nombre : base.toUpperCase(),
+        cant: match ? (parseInt(match[2], 10) || 1) : 1,
+        precio: prod ? prod.precio : 0,
+      });
+    });
+    const unico = lineas.length > 0 && lineas.every(l => l.nombre === lineas[0].nombre);
+    lineas.forEach(l => {
+      const item = mapa[l.nombre] || (mapa[l.nombre] = { nombre: l.nombre, cant: 0, total: 0 });
+      item.cant += l.cant;
+      item.total += unico ? 0 : l.cant * l.precio;
+    });
+    if (unico) mapa[lineas[0].nombre].total += Number(v.total) || 0;
+  });
+  return Object.values(mapa).sort((a, b) => b.cant - a.cant || b.total - a.total);
+}
+
+function renderTopProductos(ventas, ventasHoy) {
+  const el = document.getElementById("pos-top-productos");
+  if (!el) return;
+  const top = calcularTopProductos(ventas);
+  if (!top.length) {
+    el.innerHTML = "<p style='color:var(--text-lt);font-size:.82rem'>Sin ventas aún hoy</p>";
+    return;
+  }
+  el.innerHTML = "";
+  top.forEach((item, i) => {
+    const row = document.createElement("div");
+    row.className = "dia-pedido-row pos-top-row";
+    row.innerHTML = `
+      <span class="pos-top-pos">${i + 1}</span>
+      <p class="dia-pedido-prod" style="flex:1;min-width:0"></p>
+      <span class="pos-top-cant">${item.cant} und</span>
+      <span class="dia-pedido-total pos-top-total">${fmt(item.total)}</span>`;
+    row.querySelector(".dia-pedido-prod").textContent = item.nombre;
+    el.appendChild(row);
+  });
+  if (ventas.length < ventasHoy) {
+    const nota = document.createElement("p");
+    nota.style.cssText = "color:var(--text-lt);font-size:.72rem;margin-top:.4rem";
+    nota.textContent = `Calculado con ${ventas.length} de ${ventasHoy} tickets de hoy.`;
+    el.appendChild(nota);
+  }
 }
 
 function renderPedidosHoyList(ultimas) {
