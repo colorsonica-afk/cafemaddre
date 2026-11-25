@@ -85,13 +85,30 @@ function updateEmailPreview() {
   }
 }
 
+// El backend decodifica los parámetros como Latin-1, y las tildes y emojis
+// llegaban dañados al correo ("reciÃ©n", "ðŸ§‡"). Pasando todo carácter no
+// ASCII a entidad HTML (&#233;, &#129479;) el mensaje viaja en ASCII puro y el
+// cliente de correo lo muestra bien. El asunto es texto plano y no admite
+// entidades: eso se corrige en el Apps Script.
+function htmlSoloAscii(texto) {
+  const esHtml = /<[a-z][\s\S]*>/i.test(texto);
+  let out = "";
+  for (const ch of texto) {
+    const cp = ch.codePointAt(0);
+    if (cp < 128) out += ch;
+    else out += "&#" + cp + ";";
+  }
+  // Texto plano: se envuelve para conservar los saltos de línea al volverlo HTML
+  return esHtml ? out : '<div style="white-space:pre-wrap">' + out + '</div>';
+}
+
 async function enviarMasivo() {
   const asunto  = document.getElementById("masivo-asunto").value.trim();
   const mensaje = document.getElementById("masivo-mensaje").value.trim();
   if (!asunto || !mensaje) { toast("Completa asunto y mensaje"); return; }
   if (!confirm(`¿Enviar este correo a todos los vecinos?`)) return;
   showLoading();
-  const res = await api("enviarMasivo", { asunto, mensaje, pin: state.posPin || "", adminPassword: state.adminPass || "" });
+  const res = await api("enviarMasivo", { asunto, mensaje: htmlSoloAscii(mensaje), pin: state.posPin || "", adminPassword: state.adminPass || "" });
   hideLoading();
   if (!res.ok) { toast("❌ " + res.error); return; }
   toast(`✅ Correo enviado a ${res.enviados} vecinos`);
